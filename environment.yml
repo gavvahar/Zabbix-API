@@ -1,0 +1,11 @@
+name: zabbix
+channels:
+  - defaults
+  - conda-forge
+
+dependencies:
+  - python
+  - pip
+  - gh
+  - pip:
+      - -r requirements.txt
