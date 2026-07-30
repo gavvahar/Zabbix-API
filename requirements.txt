@@ -3,3 +3,4 @@ tox
 nodeenv
 requests
 responses
+python-dotenv
