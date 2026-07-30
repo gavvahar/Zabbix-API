@@ -1,0 +1,5 @@
+ruff
+tox
+nodeenv
+requests
+responses
