@@ -10,9 +10,9 @@ items on the device template clone — same pattern as the existing packet
 loss item — since every discovered host already carries {$SERIAL}.
 """
 
-from meraki_api import api_call, get_template_id
-from meraki_config import CLONE_TEMPLATE
-from meraki_scripts import DEVICE_STATUS_SCRIPT_BODY
+from api import api_call, get_template_id
+from config import CLONE_TEMPLATE
+from scripts import DEVICE_STATUS_SCRIPT_BODY
 
 
 def create_device_status_item(templateid):

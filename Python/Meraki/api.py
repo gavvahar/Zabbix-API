@@ -5,7 +5,7 @@ shared by every provisioning step (create, ap-health, wireless, ops).
 import json
 import requests
 
-from meraki_config import ZABBIX_URL, ZABBIX_TOKEN
+from config import ZABBIX_URL, ZABBIX_TOKEN
 
 
 def api_call(method, params=None):

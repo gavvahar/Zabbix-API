@@ -29,11 +29,11 @@ Environment variables:
 NOT built here — "AP Discovery" from the follow-up list:
 The official dashboard template already discovers one host per device via
 its "Get data: Devices discovery" LLD rule (see DISCOVERY_RULE_NAME in
-meraki_config.py). A second discovery rule that also creates per-AP hosts
+config.py). A second discovery rule that also creates per-AP hosts
 would collide with those (duplicate host errors). AP-level metrics (status,
 firmware, latency) are instead added as static items on the device template
 clone — same pattern as the existing packet loss item — since every
-discovered host already carries {$SERIAL}. See meraki_aphealth.py.
+discovered host already carries {$SERIAL}. See aphealth.py.
 
 Meraki endpoint/field names used across the scripts (devices/statuses,
 wireless/ssids, wireless/failedConnections,
@@ -41,24 +41,24 @@ wireless/devices/channelUtilization/byDevice) are best-effort from the
 public Dashboard API v1 and were NOT verified against a live org — check
 field names/response shape against current Meraki docs before running
 against production. Thresholds are placeholder macros (see
-meraki_config.py) — tune per your environment.
+config.py) — tune per your environment.
 
 Implementation is split across sibling modules:
-  meraki_config.py     env vars, template names, tuning macros
-  meraki_scripts.py    Zabbix Script item JavaScript bodies
-  meraki_api.py         Zabbix JSON-RPC wrapper + lookup helpers
-  meraki_create.py     `create` action
-  meraki_aphealth.py   `ap-health` action
-  meraki_wireless.py   `wireless` action
-  meraki_ops.py         `test` / `rollout` / `rollback` actions
+  config.py     env vars, template names, tuning macros
+  scripts.py    Zabbix Script item JavaScript bodies
+  api.py        Zabbix JSON-RPC wrapper + lookup helpers
+  create.py     `create` action
+  aphealth.py   `ap-health` action
+  wireless.py   `wireless` action
+  ops.py        `test` / `rollout` / `rollback` actions
 """
 
 import sys
 
-from meraki_create import main
-from meraki_aphealth import main_ap_health
-from meraki_wireless import create_wireless_health
-from meraki_ops import test_item, rollout, rollback
+from create import main
+from aphealth import main_ap_health
+from wireless import create_wireless_health
+from ops import test_item, rollout, rollback
 
 
 if __name__ == "__main__":
@@ -72,5 +72,5 @@ if __name__ == "__main__":
         "rollback": rollback,
     }.get(
         action,
-        lambda: print("Usage: python meraki_provision.py [create|ap-health|wireless|test|rollout|rollback]"),
+        lambda: print("Usage: python provision.py [create|ap-health|wireless|test|rollout|rollback]"),
     )()

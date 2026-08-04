@@ -2,9 +2,9 @@
 create the packet loss script item + dependent items + trigger.
 """
 
-from meraki_api import api_call, clone_template, add_macros
-from meraki_config import SOURCE_TEMPLATE, CLONE_TEMPLATE, DEVICE_MACROS, TRIGGER_DESCRIPTION
-from meraki_scripts import SCRIPT_BODY
+from api import api_call, clone_template, add_macros
+from config import SOURCE_TEMPLATE, CLONE_TEMPLATE, DEVICE_MACROS, TRIGGER_DESCRIPTION
+from scripts import SCRIPT_BODY
 
 
 def create_script_item(templateid):

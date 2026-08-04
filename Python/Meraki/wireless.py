@@ -8,9 +8,9 @@ rule — Zabbix doesn't nest discovery rules, so SSID Discovery loops
 networks internally rather than depending on Network Discovery's output.
 """
 
-from meraki_api import api_call, clone_template, add_macros
-from meraki_config import DASHBOARD_TEMPLATE, DASHBOARD_CLONE_TEMPLATE, DASHBOARD_MACROS
-from meraki_scripts import (
+from api import api_call, clone_template, add_macros
+from config import DASHBOARD_TEMPLATE, DASHBOARD_CLONE_TEMPLATE, DASHBOARD_MACROS
+from scripts import (
     NETWORK_DISCOVERY_SCRIPT_BODY,
     SSID_DISCOVERY_SCRIPT_BODY,
     RADIO_DISCOVERY_SCRIPT_BODY,

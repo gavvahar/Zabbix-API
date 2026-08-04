@@ -9,8 +9,8 @@ rollback -> undoes rollout
 
 import time
 
-from meraki_api import api_call, get_template_id, get_host_id
-from meraki_config import ORG_HOST, TEST_HOST, DISCOVERY_RULE_NAME, SOURCE_TEMPLATE, CLONE_TEMPLATE, DASHBOARD_TEMPLATE
+from api import api_call, get_template_id, get_host_id
+from config import ORG_HOST, TEST_HOST, DISCOVERY_RULE_NAME, SOURCE_TEMPLATE, CLONE_TEMPLATE, DASHBOARD_TEMPLATE
 
 
 def test_item():
