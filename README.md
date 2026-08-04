@@ -42,6 +42,7 @@ hosts.get_hosts("Linux servers")
 
 ```bash
 cd Python/Meraki
+python provision.py all         # runs create, ap-health, and wireless in sequence
 python provision.py create      # clone the device template, add the packet loss item + trigger
 python provision.py ap-health   # extend the clone: device status, AP Down, Firmware Outdated, High Latency, API Failure
 python provision.py wireless    # clone the dashboard template, add Network/SSID/Radio discovery + triggers
@@ -49,6 +50,8 @@ python provision.py test        # force-run the packet loss item on ZABBIX_TEST_
 python provision.py rollout     # repoint the device-discovery host prototype at the clone (fleet-wide)
 python provision.py rollback    # undo rollout
 ```
+
+`test`, `rollout`, and `rollback` touch a real host or the fleet-wide discovery rule, so they're deliberately left out of `all` — run those one at a time.
 
 Requires Zabbix 6.4+ (Script item type, item-level timeout override, `task.create` check-now). The implementation is split across sibling modules in `Python/Meraki/`:
 

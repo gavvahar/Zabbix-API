@@ -3,6 +3,7 @@
 Provision Meraki wireless monitoring in Zabbix via the API.
 
 Automates instructions.md plus the wireless-health follow-up list end to end:
+  all         -> runs create, ap-health, and wireless in sequence
   create      -> Steps 1-5: clone the device template, add macros, create the
                  packet loss script item + dependent items + trigger
   ap-health   -> extends the device clone: device status poll, AP Down,
@@ -15,6 +16,9 @@ Automates instructions.md plus the wireless-health follow-up list end to end:
   rollout     -> Step 7B: repoint the device-discovery host prototype at the
                  clone and force an immediate re-sync (fleet-wide, deliberate)
   rollback    -> undoes rollout
+
+`test`, `rollout`, and `rollback` touch a real host or the fleet-wide discovery
+rule, so they're deliberately left out of `all` — run them one at a time.
 
 Requires Zabbix 6.4+ (Script item type, item-level timeout override,
 task.create check-now). Requires `requests` (pip install requests) and a
@@ -61,9 +65,17 @@ from wireless import create_wireless_health
 from ops import test_item, rollout, rollback
 
 
+def main_all():
+    """Run `create`, `ap-health`, and `wireless` in sequence."""
+    main()
+    main_ap_health()
+    create_wireless_health()
+
+
 if __name__ == "__main__":
     action = sys.argv[1] if len(sys.argv) > 1 else "create"
     {
+        "all": main_all,
         "create": main,
         "ap-health": main_ap_health,
         "wireless": create_wireless_health,
@@ -72,5 +84,5 @@ if __name__ == "__main__":
         "rollback": rollback,
     }.get(
         action,
-        lambda: print("Usage: python provision.py [create|ap-health|wireless|test|rollout|rollback]"),
+        lambda: print("Usage: python provision.py [all|create|ap-health|wireless|test|rollout|rollback]"),
     )()
