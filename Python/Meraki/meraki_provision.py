@@ -72,5 +72,5 @@ if __name__ == "__main__":
         "rollback": rollback,
     }.get(
         action,
-        lambda: print("Usage: python zabbix_meraki_packetloss.py [create|ap-health|wireless|test|rollout|rollback]"),
+        lambda: print("Usage: python meraki_provision.py [create|ap-health|wireless|test|rollout|rollback]"),
     )()
