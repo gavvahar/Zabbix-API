@@ -1,16 +1,19 @@
 """Shared configuration for the Meraki Zabbix provisioning scripts: env vars,
 template names, and tuning macros.
 
-Environment variables:
-  ZABBIX_URL          e.g. https://zabbix.example.com
+Environment variables (read from the repo-root .env, see .env.example):
+  ZABBIX_URL          full JSON-RPC endpoint, e.g. https://zabbix.example.com/api_jsonrpc.php
   ZABBIX_API_TOKEN    API token (Bearer)
   ZABBIX_ORG_HOST     org-level Meraki host name (needed for `rollout`)
   ZABBIX_TEST_HOST    a host with the clone already attached (needed for `test`)
 """
 
 import os
+from dotenv import load_dotenv
 
-ZABBIX_URL = os.environ["ZABBIX_URL"].rstrip("/") + "/api_jsonrpc.php"
+load_dotenv()
+
+ZABBIX_URL = os.environ["ZABBIX_URL"].rstrip("/")
 ZABBIX_TOKEN = os.environ["ZABBIX_API_TOKEN"]
 ORG_HOST = os.environ.get("ZABBIX_ORG_HOST", "").strip()
 TEST_HOST = os.environ.get("ZABBIX_TEST_HOST", "").strip()
