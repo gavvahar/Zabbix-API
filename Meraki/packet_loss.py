@@ -22,12 +22,8 @@ Environment variables:
   ZABBIX_TEST_HOST    a host with the clone already attached (needed for `test`)
 """
 
-import json
-import os
-import sys
-import time
+import json, os, sys, time, requests
 
-import requests
 
 ZABBIX_URL = os.environ["ZABBIX_URL"].rstrip("/") + "/api_jsonrpc.php"
 ZABBIX_TOKEN = os.environ["ZABBIX_API_TOKEN"]
@@ -225,25 +221,28 @@ def create_script_item(templateid):
         return found[0]["itemid"]
 
     print("Creating 'Get packet loss data' script item")
-    result = api_call("item.create", {
-        "hostid": templateid,
-        "name": "Get packet loss data",
-        "key_": "meraki.get.packetloss",
-        "type": 21,       # Script
-        "value_type": 4,  # Text
-        "delay": "{$MERAKI.PING.INTERVAL};50s/1-7,00:00-24:00",
-        "timeout": "{$MERAKI.DATA.TIMEOUT}",
-        "history": "0",   # Do not store
-        "params": SCRIPT_BODY,
-        "parameters": [
-            {"name": "count", "value": "{$MERAKI.PING.COUNT}"},
-            {"name": "httpproxy", "value": "{$MERAKI.HTTP_PROXY}"},
-            {"name": "serial", "value": "{$SERIAL}"},
-            {"name": "target", "value": "{$MERAKI.PING.TARGET}"},
-            {"name": "token", "value": "{$MERAKI.TOKEN}"},
-            {"name": "url", "value": "{$MERAKI.API.URL}"},
-        ],
-    })
+    result = api_call(
+        "item.create",
+        {
+            "hostid": templateid,
+            "name": "Get packet loss data",
+            "key_": "meraki.get.packetloss",
+            "type": 21,  # Script
+            "value_type": 4,  # Text
+            "delay": "{$MERAKI.PING.INTERVAL};50s/1-7,00:00-24:00",
+            "timeout": "{$MERAKI.DATA.TIMEOUT}",
+            "history": "0",  # Do not store
+            "params": SCRIPT_BODY,
+            "parameters": [
+                {"name": "count", "value": "{$MERAKI.PING.COUNT}"},
+                {"name": "httpproxy", "value": "{$MERAKI.HTTP_PROXY}"},
+                {"name": "serial", "value": "{$SERIAL}"},
+                {"name": "target", "value": "{$MERAKI.PING.TARGET}"},
+                {"name": "token", "value": "{$MERAKI.TOKEN}"},
+                {"name": "url", "value": "{$MERAKI.API.URL}"},
+            ],
+        },
+    )
     return result["itemids"][0]
 
 
@@ -253,23 +252,28 @@ def create_dependent_item(templateid, master_itemid, name, key, jsonpath, units)
         return found[0]["itemid"]
 
     print(f"Creating dependent item '{name}'")
-    result = api_call("item.create", {
-        "hostid": templateid,
-        "name": name,
-        "key_": key,
-        "type": 18,  # Dependent item
-        "master_itemid": master_itemid,
-        "value_type": 0,  # Numeric float
-        "units": units,
-        "history": "31d",
-        "trends": "365d",
-        "preprocessing": [{
-            "type": 12,  # JSONPath
-            "params": jsonpath,
-            "error_handler": 1,  # Discard value
-            "error_handler_params": "",
-        }],
-    })
+    result = api_call(
+        "item.create",
+        {
+            "hostid": templateid,
+            "name": name,
+            "key_": key,
+            "type": 18,  # Dependent item
+            "master_itemid": master_itemid,
+            "value_type": 0,  # Numeric float
+            "units": units,
+            "history": "31d",
+            "trends": "365d",
+            "preprocessing": [
+                {
+                    "type": 12,  # JSONPath
+                    "params": jsonpath,
+                    "error_handler": 1,  # Discard value
+                    "error_handler_params": "",
+                }
+            ],
+        },
+    )
     return result["itemids"][0]
 
 
@@ -280,12 +284,15 @@ def create_trigger(templateid):
 
     print("Creating packet loss trigger")
     expression = f"min(/{CLONE_TEMPLATE}/meraki.device.packetloss.pct,#3)>{{$MERAKI.PING.LOSS}}"
-    result = api_call("trigger.create", {
-        "description": TRIGGER_DESCRIPTION,
-        "expression": expression,
-        "priority": 2,  # Warning
-        "tags": [{"tag": "scope", "value": "performance"}],
-    })
+    result = api_call(
+        "trigger.create",
+        {
+            "description": TRIGGER_DESCRIPTION,
+            "expression": expression,
+            "priority": 2,  # Warning
+            "tags": [{"tag": "scope", "value": "performance"}],
+        },
+    )
     return result["triggerids"][0]
 
 
@@ -294,12 +301,20 @@ def main():
     add_macros(templateid)
     script_itemid = create_script_item(templateid)
     create_dependent_item(
-        templateid, script_itemid, "Latency, ms", "meraki.device.ping.latency",
-        "$.result.results.latencies.average", "ms",
+        templateid,
+        script_itemid,
+        "Latency, ms",
+        "meraki.device.ping.latency",
+        "$.result.results.latencies.average",
+        "ms",
     )
     create_dependent_item(
-        templateid, script_itemid, "Packet loss, %", "meraki.device.packetloss.pct",
-        "$.result.results.loss.percentage", "%",
+        templateid,
+        script_itemid,
+        "Packet loss, %",
+        "meraki.device.packetloss.pct",
+        "$.result.results.loss.percentage",
+        "%",
     )
     create_trigger(templateid)
     print(f"Done. '{CLONE_TEMPLATE}' is ready (templateid {templateid}).")
@@ -314,11 +329,14 @@ def test_item():
     if not hostid:
         raise RuntimeError(f"Host not found: {TEST_HOST}")
 
-    item = api_call("item.get", {
-        "hostids": [hostid],
-        "filter": {"key_": "meraki.get.packetloss"},
-        "output": ["itemid", "history"],
-    })
+    item = api_call(
+        "item.get",
+        {
+            "hostids": [hostid],
+            "filter": {"key_": "meraki.get.packetloss"},
+            "output": ["itemid", "history"],
+        },
+    )
     if not item:
         raise RuntimeError(f"Item not found on {TEST_HOST} — attach the clone template first")
     itemid, original_history = item[0]["itemid"], item[0]["history"]
@@ -328,9 +346,16 @@ def test_item():
     print("Check-now queued, waiting for a result...")
     time.sleep(5)
 
-    history = api_call("history.get", {
-        "itemids": [itemid], "history": 4, "sortfield": "clock", "sortorder": "DESC", "limit": 1,
-    })
+    history = api_call(
+        "history.get",
+        {
+            "itemids": [itemid],
+            "history": 4,
+            "sortfield": "clock",
+            "sortorder": "DESC",
+            "limit": 1,
+        },
+    )
     if history:
         print("Latest raw value:")
         print(history[0]["value"])
@@ -342,9 +367,14 @@ def test_item():
 
 
 def _discovery_rule_itemid(templateid):
-    rules = api_call("discoveryrule.get", {
-        "templateids": [templateid], "filter": {"name": [DISCOVERY_RULE_NAME]}, "output": ["itemid"],
-    })
+    rules = api_call(
+        "discoveryrule.get",
+        {
+            "templateids": [templateid],
+            "filter": {"name": [DISCOVERY_RULE_NAME]},
+            "output": ["itemid"],
+        },
+    )
     if not rules:
         raise RuntimeError(f"Discovery rule '{DISCOVERY_RULE_NAME}' not found")
     return rules[0]["itemid"]
@@ -369,9 +399,14 @@ def _resync_org_host():
     if not org_hostid:
         print(f"Org host '{ORG_HOST}' not found — re-sync it manually.")
         return
-    org_rules = api_call("discoveryrule.get", {
-        "hostids": [org_hostid], "filter": {"name": [DISCOVERY_RULE_NAME]}, "output": ["itemid"],
-    })
+    org_rules = api_call(
+        "discoveryrule.get",
+        {
+            "hostids": [org_hostid],
+            "filter": {"name": [DISCOVERY_RULE_NAME]},
+            "output": ["itemid"],
+        },
+    )
     if not org_rules:
         print("Discovery rule instance not found on org host — re-sync it manually.")
         return
