@@ -8,9 +8,7 @@ rule — Zabbix doesn't nest discovery rules, so SSID Discovery loops
 networks internally rather than depending on Network Discovery's output.
 """
 
-import json
-
-from meraki_api import api_call, get_template_id, strip_uuids, add_macros
+from meraki_api import api_call, clone_template, add_macros
 from meraki_config import DASHBOARD_TEMPLATE, DASHBOARD_CLONE_TEMPLATE, DASHBOARD_MACROS
 from meraki_scripts import (
     NETWORK_DISCOVERY_SCRIPT_BODY,
@@ -21,35 +19,6 @@ from meraki_scripts import (
     SSID_AUTHFAILURES_SCRIPT_BODY,
     RADIO_UTILIZATION_SCRIPT_BODY,
 )
-
-
-def clone_dashboard_template():
-    existing = api_call("template.get", {"filter": {"host": [DASHBOARD_CLONE_TEMPLATE]}})
-    if existing:
-        print(f"'{DASHBOARD_CLONE_TEMPLATE}' already exists, skipping clone.")
-        return existing[0]["templateid"]
-
-    print(f"Cloning '{DASHBOARD_TEMPLATE}' -> '{DASHBOARD_CLONE_TEMPLATE}'")
-    src_id = get_template_id(DASHBOARD_TEMPLATE)
-    exported = api_call("configuration.export", {"format": "json", "options": {"templates": [src_id]}})
-    data = json.loads(exported)
-    tmpl = data["zabbix_export"]["templates"][0]
-    tmpl["template"] = DASHBOARD_CLONE_TEMPLATE
-    tmpl["name"] = DASHBOARD_CLONE_TEMPLATE
-    strip_uuids(data["zabbix_export"])
-
-    rules = {
-        "template_groups": {"createMissing": True},
-        "templates": {"createMissing": True, "updateExisting": False},
-        "templateLinkage": {"createMissing": True},
-        "items": {"createMissing": True, "updateExisting": False},
-        "triggers": {"createMissing": True, "updateExisting": False},
-        "discoveryRules": {"createMissing": True, "updateExisting": False},
-        "graphs": {"createMissing": True, "updateExisting": False},
-        "valueMaps": {"createMissing": True, "updateExisting": False},
-    }
-    api_call("configuration.import", {"format": "json", "source": json.dumps(data), "rules": rules})
-    return get_template_id(DASHBOARD_CLONE_TEMPLATE)
 
 
 def create_discovery_rule(templateid, name, key, script_body, parameters, lifetime="7d"):
@@ -119,7 +88,7 @@ def create_trigger_prototype(templateid, description, expression, priority, tag_
 
 
 def create_wireless_health():
-    templateid = clone_dashboard_template()
+    templateid = clone_template(DASHBOARD_TEMPLATE, DASHBOARD_CLONE_TEMPLATE)
     add_macros(templateid, DASHBOARD_MACROS)
 
     api_params = [

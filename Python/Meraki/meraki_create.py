@@ -2,40 +2,9 @@
 create the packet loss script item + dependent items + trigger.
 """
 
-import json
-
-from meraki_api import api_call, get_template_id, strip_uuids, add_macros
+from meraki_api import api_call, clone_template, add_macros
 from meraki_config import SOURCE_TEMPLATE, CLONE_TEMPLATE, DEVICE_MACROS, TRIGGER_DESCRIPTION
 from meraki_scripts import SCRIPT_BODY
-
-
-def clone_template():
-    existing = api_call("template.get", {"filter": {"host": [CLONE_TEMPLATE]}})
-    if existing:
-        print(f"'{CLONE_TEMPLATE}' already exists, skipping clone.")
-        return existing[0]["templateid"]
-
-    print(f"Cloning '{SOURCE_TEMPLATE}' -> '{CLONE_TEMPLATE}'")
-    src_id = get_template_id(SOURCE_TEMPLATE)
-    exported = api_call("configuration.export", {"format": "json", "options": {"templates": [src_id]}})
-    data = json.loads(exported)
-    tmpl = data["zabbix_export"]["templates"][0]
-    tmpl["template"] = CLONE_TEMPLATE
-    tmpl["name"] = CLONE_TEMPLATE
-    strip_uuids(data["zabbix_export"])
-
-    rules = {
-        "template_groups": {"createMissing": True},
-        "templates": {"createMissing": True, "updateExisting": False},
-        "templateLinkage": {"createMissing": True},
-        "items": {"createMissing": True, "updateExisting": False},
-        "triggers": {"createMissing": True, "updateExisting": False},
-        "discoveryRules": {"createMissing": True, "updateExisting": False},
-        "graphs": {"createMissing": True, "updateExisting": False},
-        "valueMaps": {"createMissing": True, "updateExisting": False},
-    }
-    api_call("configuration.import", {"format": "json", "source": json.dumps(data), "rules": rules})
-    return get_template_id(CLONE_TEMPLATE)
 
 
 def create_script_item(templateid):
@@ -120,7 +89,7 @@ def create_trigger(templateid):
 
 
 def main():
-    templateid = clone_template()
+    templateid = clone_template(SOURCE_TEMPLATE, CLONE_TEMPLATE)
     add_macros(templateid, DEVICE_MACROS)
     script_itemid = create_script_item(templateid)
     create_dependent_item(

@@ -50,6 +50,35 @@ def strip_uuids(obj):
             strip_uuids(item)
 
 
+def clone_template(source_name, clone_name):
+    existing = api_call("template.get", {"filter": {"host": [clone_name]}})
+    if existing:
+        print(f"'{clone_name}' already exists, skipping clone.")
+        return existing[0]["templateid"]
+
+    print(f"Cloning '{source_name}' -> '{clone_name}'")
+    src_id = get_template_id(source_name)
+    exported = api_call("configuration.export", {"format": "json", "options": {"templates": [src_id]}})
+    data = json.loads(exported)
+    tmpl = data["zabbix_export"]["templates"][0]
+    tmpl["template"] = clone_name
+    tmpl["name"] = clone_name
+    strip_uuids(data["zabbix_export"])
+
+    rules = {
+        "template_groups": {"createMissing": True},
+        "templates": {"createMissing": True, "updateExisting": False},
+        "templateLinkage": {"createMissing": True},
+        "items": {"createMissing": True, "updateExisting": False},
+        "triggers": {"createMissing": True, "updateExisting": False},
+        "discoveryRules": {"createMissing": True, "updateExisting": False},
+        "graphs": {"createMissing": True, "updateExisting": False},
+        "valueMaps": {"createMissing": True, "updateExisting": False},
+    }
+    api_call("configuration.import", {"format": "json", "source": json.dumps(data), "rules": rules})
+    return get_template_id(clone_name)
+
+
 def add_macros(templateid, macros):
     existing = {m["macro"] for m in api_call("usermacro.get", {"hostids": [templateid], "output": ["macro"]})}
     for macro, value in macros.items():
