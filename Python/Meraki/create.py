@@ -8,6 +8,7 @@ from scripts import SCRIPT_BODY
 
 
 def create_script_item(templateid):
+    """Create the packet loss Script item on the template, or return its existing id."""
     found = api_call("item.get", {"hostids": [templateid], "filter": {"key_": "meraki.get.packetloss"}})
     if found:
         return found[0]["itemid"]
@@ -39,6 +40,7 @@ def create_script_item(templateid):
 
 
 def create_dependent_item(templateid, master_itemid, name, key, jsonpath, units):
+    """Create a numeric dependent item that extracts jsonpath from the master item's JSON, or return its existing id."""
     found = api_call("item.get", {"hostids": [templateid], "filter": {"key_": key}})
     if found:
         return found[0]["itemid"]
@@ -70,6 +72,7 @@ def create_dependent_item(templateid, master_itemid, name, key, jsonpath, units)
 
 
 def create_trigger(templateid):
+    """Create the packet loss trigger, or return its existing id."""
     found = api_call("trigger.get", {"hostids": [templateid], "filter": {"description": TRIGGER_DESCRIPTION}})
     if found:
         return found[0]["triggerid"]
@@ -89,6 +92,7 @@ def create_trigger(templateid):
 
 
 def main():
+    """Run the `create` action: clone the device template and add the packet loss item, dependent items, and trigger."""
     templateid = clone_template(SOURCE_TEMPLATE, CLONE_TEMPLATE)
     add_macros(templateid, DEVICE_MACROS)
     script_itemid = create_script_item(templateid)

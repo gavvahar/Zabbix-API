@@ -22,6 +22,7 @@ from scripts import (
 
 
 def create_discovery_rule(templateid, name, key, script_body, parameters, lifetime="7d"):
+    """Create a Script discovery rule on the template, or return its existing id."""
     found = api_call("discoveryrule.get", {"hostids": [templateid], "filter": {"key_": key}})
     if found:
         return found[0]["itemid"]
@@ -45,6 +46,7 @@ def create_discovery_rule(templateid, name, key, script_body, parameters, lifeti
 
 
 def create_itemprototype(templateid, ruleid, name, key, script_body, parameters, value_type=3, units=None):
+    """Create an item prototype under the discovery rule, or return its existing id."""
     found = api_call("itemprototype.get", {"hostids": [templateid], "filter": {"key_": key}})
     if found:
         return found[0]["itemid"]
@@ -70,6 +72,7 @@ def create_itemprototype(templateid, ruleid, name, key, script_body, parameters,
 
 
 def create_trigger_prototype(templateid, description, expression, priority, tag_value="performance"):
+    """Create a trigger prototype, or return its existing id."""
     found = api_call("triggerprototype.get", {"hostids": [templateid], "filter": {"description": description}})
     if found:
         return found[0]["triggerid"]
@@ -88,6 +91,7 @@ def create_trigger_prototype(templateid, description, expression, priority, tag_
 
 
 def create_wireless_health():
+    """Run the `wireless` action: clone the dashboard template and add Network/SSID/Radio discovery with their item and trigger prototypes."""
     templateid = clone_template(DASHBOARD_TEMPLATE, DASHBOARD_CLONE_TEMPLATE)
     add_macros(templateid, DASHBOARD_MACROS)
 

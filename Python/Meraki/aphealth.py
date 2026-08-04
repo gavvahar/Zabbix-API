@@ -25,11 +25,13 @@ OFFICIAL_STATUS_ERRORS_KEY = "meraki.device.get.status.errors"
 
 
 def _find_item_by_key(templateid, key):
+    """Return the itemid of the item with the given key on the template, or None."""
     found = api_call("item.get", {"hostids": [templateid], "filter": {"key_": key}, "output": ["itemid"]})
     return found[0]["itemid"] if found else None
 
 
 def create_device_status_item(templateid):
+    """Create the device status Script item on the template, or return its existing id."""
     found = api_call("item.get", {"hostids": [templateid], "filter": {"key_": "meraki.get.devicestatus"}})
     if found:
         return found[0]["itemid"]
@@ -60,6 +62,7 @@ def create_device_status_item(templateid):
 
 
 def create_text_dependent_item(templateid, master_itemid, name, key, jsonpath, discard_on_fail=True):
+    """Create a text dependent item that extracts jsonpath from the master item's JSON, or return its existing id."""
     found = api_call("item.get", {"hostids": [templateid], "filter": {"key_": key}})
     if found:
         return found[0]["itemid"]
@@ -118,6 +121,7 @@ def resolve_device_status_item(templateid):
 
 
 def create_ap_health(templateid):
+    """Add the device status item, its dependent items, and the AP health triggers to the template."""
     status_itemid, status_error_key = resolve_device_status_item(templateid)
     packetloss_itemid = api_call(
         "item.get",
@@ -207,6 +211,7 @@ def create_ap_health(templateid):
 
 
 def main_ap_health():
+    """Run the `ap-health` action against the existing device template clone."""
     templateid = get_template_id(CLONE_TEMPLATE)
     create_ap_health(templateid)
     print(f"Done. AP health items/triggers added to '{CLONE_TEMPLATE}'.")

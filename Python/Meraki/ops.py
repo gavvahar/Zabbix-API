@@ -14,6 +14,7 @@ from config import ORG_HOST, TEST_HOST, DISCOVERY_RULE_NAME, SOURCE_TEMPLATE, CL
 
 
 def test_item():
+    """Force-run the packet loss item on ZABBIX_TEST_HOST and print its latest raw value."""
     if not TEST_HOST:
         raise RuntimeError("Set ZABBIX_TEST_HOST to a host with the clone template already attached")
 
@@ -59,6 +60,7 @@ def test_item():
 
 
 def _discovery_rule_itemid(templateid):
+    """Look up the itemid of the official devices discovery rule on a template."""
     rules = api_call(
         "discoveryrule.get",
         {
@@ -73,6 +75,7 @@ def _discovery_rule_itemid(templateid):
 
 
 def _relink_prototype(new_templateid):
+    """Point the device-discovery host prototype's template link at new_templateid."""
     dash_id = get_template_id(DASHBOARD_TEMPLATE)
     druleid = _discovery_rule_itemid(dash_id)
     prototypes = api_call("hostprototype.get", {"discoveryids": [druleid], "output": ["hostid", "host"]})
@@ -84,6 +87,7 @@ def _relink_prototype(new_templateid):
 
 
 def _resync_org_host():
+    """Force an immediate re-sync of the org host's discovery rule, if ZABBIX_ORG_HOST is set."""
     if not ORG_HOST:
         print("Set ZABBIX_ORG_HOST and re-run to also force an immediate re-sync.")
         return
@@ -114,6 +118,7 @@ def rollout():
 
 
 def rollback():
+    """Undo rollout by repointing the host prototype back at the source template."""
     src_id = get_template_id(SOURCE_TEMPLATE)
     _relink_prototype(src_id)
     _resync_org_host()

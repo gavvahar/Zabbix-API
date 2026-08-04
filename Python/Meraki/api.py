@@ -7,6 +7,7 @@ from config import ZABBIX_URL, ZABBIX_TOKEN
 
 
 def api_call(method, params=None):
+    """Call a Zabbix API method over JSON-RPC and return its result."""
     payload = {"jsonrpc": "2.0", "method": method, "params": params or {}, "id": 1}
     headers = {
         "Content-Type": "application/json-rpc",
@@ -21,6 +22,7 @@ def api_call(method, params=None):
 
 
 def get_template_id(name):
+    """Look up a template's id by name, raising if it doesn't exist."""
     result = api_call("template.get", {"filter": {"host": [name]}, "output": ["templateid"]})
     if not result:
         raise RuntimeError(f"Template not found: {name}")
@@ -28,6 +30,7 @@ def get_template_id(name):
 
 
 def get_host_id(name):
+    """Look up a host's id by its technical or visible name, or None if not found."""
     for key in ("host", "name"):
         result = api_call("host.get", {"filter": {key: [name]}, "output": ["hostid"]})
         if result:
@@ -36,6 +39,7 @@ def get_host_id(name):
 
 
 def strip_uuids(obj):
+    """Recursively strip 'uuid' keys from a decoded configuration export, in place."""
     # Zabbix matches templates by uuid before name; keeping the source
     # template's uuid on the renamed copy makes import treat it as the
     # same template and conflict with the original.
@@ -49,6 +53,7 @@ def strip_uuids(obj):
 
 
 def clone_template(source_name, clone_name):
+    """Clone source_name to clone_name via export/import, or return the existing clone's id."""
     existing = api_call("template.get", {"filter": {"host": [clone_name]}})
     if existing:
         print(f"'{clone_name}' already exists, skipping clone.")
@@ -78,6 +83,7 @@ def clone_template(source_name, clone_name):
 
 
 def add_macros(templateid, macros):
+    """Create any of the given user macros that aren't already defined on the template."""
     existing = {m["macro"] for m in api_call("usermacro.get", {"hostids": [templateid], "output": ["macro"]})}
     for macro, value in macros.items():
         if macro in existing:
