@@ -2,7 +2,7 @@
 shared by every provisioning step (create, ap-health, wireless, ops).
 """
 
-import json, requests
+import json, uuid, requests
 from config import ZABBIX_URL, ZABBIX_TOKEN
 
 
@@ -39,21 +39,20 @@ def get_host_id(name):
 
 
 def reset_uuids(obj):
-    """Recursively blank out 'uuid' values (to '') within a decoded configuration
-    export subtree, in place, so Zabbix generates fresh ones on import instead
-    of matching existing objects by their old uuid. The tag itself is left in
-    place — Zabbix's import validator requires it to be present even when empty.
+    """Recursively replace 'uuid' values with freshly generated ones within a
+    decoded configuration export subtree, in place, so Zabbix treats the
+    renamed copy as new objects instead of matching the source template's by
+    uuid. Zabbix's own uuids are 32-char hex strings (no dashes); an empty or
+    missing tag fails its import validation, so a real replacement is required.
 
     Callers should scope this to the export's "templates" subtree only —
-    Zabbix matches templates by uuid before name, so keeping the source
-    template's uuid on the renamed copy makes import treat it as the same
-    template and conflict with the original. Other top-level sections like
-    "host_groups" reference existing objects by uuid and need their real
-    value kept, or the group match — and import validation — fails.
+    other top-level sections like "host_groups" reference existing objects by
+    uuid and need their real value kept, or the group match — and import
+    validation — fails.
     """
     if isinstance(obj, dict):
         if "uuid" in obj:
-            obj["uuid"] = ""
+            obj["uuid"] = uuid.uuid4().hex
         for v in obj.values():
             reset_uuids(v)
     elif isinstance(obj, list):
