@@ -43,12 +43,8 @@ Meraki docs before running against production. Thresholds are placeholder
 macros (add_macros / DASHBOARD_MACROS) — tune per your environment.
 """
 
-import json
-import os
-import sys
-import time
+import json, os, sys, time, requests
 
-import requests
 
 ZABBIX_URL = os.environ["ZABBIX_URL"].rstrip("/") + "/api_jsonrpc.php"
 ZABBIX_TOKEN = os.environ["ZABBIX_API_TOKEN"]
@@ -68,9 +64,9 @@ DEVICE_MACROS = {
     "{$MERAKI.PING.INTERVAL}": "5m",
     "{$MERAKI.PING.TARGET}": "8.8.8.8",
     "{$MERAKI.PING.LOSS}": "20",
-    "{$MERAKI.PING.LATENCY.HIGH}": "100",   # ms
+    "{$MERAKI.PING.LATENCY.HIGH}": "100",  # ms
     "{$MERAKI.DEVICESTATUS.INTERVAL}": "5m",
-    "{$MERAKI.FIRMWARE.EXPECTED}": "",      # blank = Firmware Outdated trigger stays inactive until set
+    "{$MERAKI.FIRMWARE.EXPECTED}": "",  # blank = Firmware Outdated trigger stays inactive until set
 }
 
 DASHBOARD_MACROS = {
@@ -259,25 +255,28 @@ def create_script_item(templateid):
         return found[0]["itemid"]
 
     print("Creating 'Get packet loss data' script item")
-    result = api_call("item.create", {
-        "hostid": templateid,
-        "name": "Get packet loss data",
-        "key_": "meraki.get.packetloss",
-        "type": 21,       # Script
-        "value_type": 4,  # Text
-        "delay": "{$MERAKI.PING.INTERVAL};50s/1-7,00:00-24:00",
-        "timeout": "{$MERAKI.DATA.TIMEOUT}",
-        "history": "0",   # Do not store
-        "params": SCRIPT_BODY,
-        "parameters": [
-            {"name": "count", "value": "{$MERAKI.PING.COUNT}"},
-            {"name": "httpproxy", "value": "{$MERAKI.HTTP_PROXY}"},
-            {"name": "serial", "value": "{$SERIAL}"},
-            {"name": "target", "value": "{$MERAKI.PING.TARGET}"},
-            {"name": "token", "value": "{$MERAKI.TOKEN}"},
-            {"name": "url", "value": "{$MERAKI.API.URL}"},
-        ],
-    })
+    result = api_call(
+        "item.create",
+        {
+            "hostid": templateid,
+            "name": "Get packet loss data",
+            "key_": "meraki.get.packetloss",
+            "type": 21,  # Script
+            "value_type": 4,  # Text
+            "delay": "{$MERAKI.PING.INTERVAL};50s/1-7,00:00-24:00",
+            "timeout": "{$MERAKI.DATA.TIMEOUT}",
+            "history": "0",  # Do not store
+            "params": SCRIPT_BODY,
+            "parameters": [
+                {"name": "count", "value": "{$MERAKI.PING.COUNT}"},
+                {"name": "httpproxy", "value": "{$MERAKI.HTTP_PROXY}"},
+                {"name": "serial", "value": "{$SERIAL}"},
+                {"name": "target", "value": "{$MERAKI.PING.TARGET}"},
+                {"name": "token", "value": "{$MERAKI.TOKEN}"},
+                {"name": "url", "value": "{$MERAKI.API.URL}"},
+            ],
+        },
+    )
     return result["itemids"][0]
 
 
@@ -287,23 +286,28 @@ def create_dependent_item(templateid, master_itemid, name, key, jsonpath, units)
         return found[0]["itemid"]
 
     print(f"Creating dependent item '{name}'")
-    result = api_call("item.create", {
-        "hostid": templateid,
-        "name": name,
-        "key_": key,
-        "type": 18,  # Dependent item
-        "master_itemid": master_itemid,
-        "value_type": 0,  # Numeric float
-        "units": units,
-        "history": "31d",
-        "trends": "365d",
-        "preprocessing": [{
-            "type": 12,  # JSONPath
-            "params": jsonpath,
-            "error_handler": 1,  # Discard value
-            "error_handler_params": "",
-        }],
-    })
+    result = api_call(
+        "item.create",
+        {
+            "hostid": templateid,
+            "name": name,
+            "key_": key,
+            "type": 18,  # Dependent item
+            "master_itemid": master_itemid,
+            "value_type": 0,  # Numeric float
+            "units": units,
+            "history": "31d",
+            "trends": "365d",
+            "preprocessing": [
+                {
+                    "type": 12,  # JSONPath
+                    "params": jsonpath,
+                    "error_handler": 1,  # Discard value
+                    "error_handler_params": "",
+                }
+            ],
+        },
+    )
     return result["itemids"][0]
 
 
@@ -314,12 +318,15 @@ def create_trigger(templateid):
 
     print("Creating packet loss trigger")
     expression = f"min(/{CLONE_TEMPLATE}/meraki.device.packetloss.pct,#3)>{{$MERAKI.PING.LOSS}}"
-    result = api_call("trigger.create", {
-        "description": TRIGGER_DESCRIPTION,
-        "expression": expression,
-        "priority": 2,  # Warning
-        "tags": [{"tag": "scope", "value": "performance"}],
-    })
+    result = api_call(
+        "trigger.create",
+        {
+            "description": TRIGGER_DESCRIPTION,
+            "expression": expression,
+            "priority": 2,  # Warning
+            "tags": [{"tag": "scope", "value": "performance"}],
+        },
+    )
     return result["triggerids"][0]
 
 
@@ -383,24 +390,27 @@ def create_device_status_item(templateid):
         return found[0]["itemid"]
 
     print("Creating 'Get device status' script item")
-    result = api_call("item.create", {
-        "hostid": templateid,
-        "name": "Get device status",
-        "key_": "meraki.get.devicestatus",
-        "type": 21,       # Script
-        "value_type": 4,  # Text
-        "delay": "{$MERAKI.DEVICESTATUS.INTERVAL}",
-        "timeout": "{$MERAKI.DATA.TIMEOUT}",
-        "history": "0",   # Do not store — raw JSON, mirrored by dependent items below
-        "params": DEVICE_STATUS_SCRIPT_BODY,
-        "parameters": [
-            {"name": "httpproxy", "value": "{$MERAKI.HTTP_PROXY}"},
-            {"name": "orgid", "value": "{$MERAKI.ORG.ID}"},
-            {"name": "serial", "value": "{$SERIAL}"},
-            {"name": "token", "value": "{$MERAKI.TOKEN}"},
-            {"name": "url", "value": "{$MERAKI.API.URL}"},
-        ],
-    })
+    result = api_call(
+        "item.create",
+        {
+            "hostid": templateid,
+            "name": "Get device status",
+            "key_": "meraki.get.devicestatus",
+            "type": 21,  # Script
+            "value_type": 4,  # Text
+            "delay": "{$MERAKI.DEVICESTATUS.INTERVAL}",
+            "timeout": "{$MERAKI.DATA.TIMEOUT}",
+            "history": "0",  # Do not store — raw JSON, mirrored by dependent items below
+            "params": DEVICE_STATUS_SCRIPT_BODY,
+            "parameters": [
+                {"name": "httpproxy", "value": "{$MERAKI.HTTP_PROXY}"},
+                {"name": "orgid", "value": "{$MERAKI.ORG.ID}"},
+                {"name": "serial", "value": "{$SERIAL}"},
+                {"name": "token", "value": "{$MERAKI.TOKEN}"},
+                {"name": "url", "value": "{$MERAKI.API.URL}"},
+            ],
+        },
+    )
     return result["itemids"][0]
 
 
@@ -410,45 +420,71 @@ def create_text_dependent_item(templateid, master_itemid, name, key, jsonpath, d
         return found[0]["itemid"]
 
     print(f"Creating dependent item '{name}'")
-    preprocessing = [{
-        "type": 12,  # JSONPath
-        "params": jsonpath,
-        "error_handler": 1 if discard_on_fail else 0,
-        "error_handler_params": "",
-    }]
-    result = api_call("item.create", {
-        "hostid": templateid,
-        "name": name,
-        "key_": key,
-        "type": 18,  # Dependent item
-        "master_itemid": master_itemid,
-        "value_type": 4,  # Text
-        "history": "31d",
-        "preprocessing": preprocessing,
-    })
+    preprocessing = [
+        {
+            "type": 12,  # JSONPath
+            "params": jsonpath,
+            "error_handler": 1 if discard_on_fail else 0,
+            "error_handler_params": "",
+        }
+    ]
+    result = api_call(
+        "item.create",
+        {
+            "hostid": templateid,
+            "name": name,
+            "key_": key,
+            "type": 18,  # Dependent item
+            "master_itemid": master_itemid,
+            "value_type": 4,  # Text
+            "history": "31d",
+            "preprocessing": preprocessing,
+        },
+    )
     return result["itemids"][0]
 
 
 def create_ap_health(templateid):
     status_itemid = create_device_status_item(templateid)
-    packetloss_itemid = api_call("item.get", {
-        "hostids": [templateid], "filter": {"key_": "meraki.get.packetloss"}, "output": ["itemid"],
-    })[0]["itemid"]
+    packetloss_itemid = api_call(
+        "item.get",
+        {
+            "hostids": [templateid],
+            "filter": {"key_": "meraki.get.packetloss"},
+            "output": ["itemid"],
+        },
+    )[0]["itemid"]
 
     create_text_dependent_item(
-        templateid, status_itemid, "Device status", "meraki.device.status", "$.result.status",
+        templateid,
+        status_itemid,
+        "Device status",
+        "meraki.device.status",
+        "$.result.status",
     )
     create_text_dependent_item(
-        templateid, status_itemid, "Firmware version", "meraki.device.firmware", "$.result.firmware",
+        templateid,
+        status_itemid,
+        "Firmware version",
+        "meraki.device.firmware",
+        "$.result.firmware",
     )
     # Error mirrors, kept even when empty (discard_on_fail=False) so "no error" is a real value,
     # not a gap — API Failure below needs to see it either way.
     create_text_dependent_item(
-        templateid, status_itemid, "Device status: API error", "meraki.device.status.error", "$.error",
+        templateid,
+        status_itemid,
+        "Device status: API error",
+        "meraki.device.status.error",
+        "$.error",
         discard_on_fail=False,
     )
     create_text_dependent_item(
-        templateid, packetloss_itemid, "Packet loss: API error", "meraki.get.packetloss.error", "$.error",
+        templateid,
+        packetloss_itemid,
+        "Packet loss: API error",
+        "meraki.get.packetloss.error",
+        "$.error",
         discard_on_fail=False,
     )
 
@@ -460,19 +496,17 @@ def create_ap_health(templateid):
         ),
         (
             "Meraki: {HOST.NAME} firmware outdated (expected {$MERAKI.FIRMWARE.EXPECTED})",
-            f'{{$MERAKI.FIRMWARE.EXPECTED}}<>"" and '
-            f'last(/{CLONE_TEMPLATE}/meraki.device.firmware)<>{{$MERAKI.FIRMWARE.EXPECTED}}',
+            f'{{$MERAKI.FIRMWARE.EXPECTED}}<>"" and last(/{CLONE_TEMPLATE}/meraki.device.firmware)<>{{$MERAKI.FIRMWARE.EXPECTED}}',
             1,  # Information
         ),
         (
             "Meraki: High latency to {$MERAKI.PING.TARGET} on {HOST.NAME}",
-            f'min(/{CLONE_TEMPLATE}/meraki.device.ping.latency,#3)>{{$MERAKI.PING.LATENCY.HIGH}}',
+            f"min(/{CLONE_TEMPLATE}/meraki.device.ping.latency,#3)>{{$MERAKI.PING.LATENCY.HIGH}}",
             2,  # Warning
         ),
         (
             "Meraki: API failure polling {HOST.NAME}",
-            f'length(last(/{CLONE_TEMPLATE}/meraki.device.status.error))>0 or '
-            f'length(last(/{CLONE_TEMPLATE}/meraki.get.packetloss.error))>0',
+            f"length(last(/{CLONE_TEMPLATE}/meraki.device.status.error))>0 or length(last(/{CLONE_TEMPLATE}/meraki.get.packetloss.error))>0",
             3,  # Average
         ),
     ]
@@ -481,12 +515,15 @@ def create_ap_health(templateid):
         if found:
             continue
         print(f"Creating trigger '{description}'")
-        api_call("trigger.create", {
-            "description": description,
-            "expression": expression,
-            "priority": priority,
-            "tags": [{"tag": "scope", "value": "availability"}],
-        })
+        api_call(
+            "trigger.create",
+            {
+                "description": description,
+                "expression": expression,
+                "priority": priority,
+                "tags": [{"tag": "scope", "value": "availability"}],
+            },
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -516,9 +553,13 @@ if (url.slice(-1) !== '/') {
 }
 """.strip()
 
-NETWORK_DISCOVERY_SCRIPT_BODY = (r"""
+NETWORK_DISCOVERY_SCRIPT_BODY = (
+    r"""
 var params = JSON.parse(value);
-""" + "\n" + _HTTP_SETUP + r"""
+"""
+    + "\n"
+    + _HTTP_SETUP
+    + r"""
 
 var response = request.get(url + 'organizations/' + encodeURIComponent(params.orgid) + '/networks');
 if (request.getStatus() !== 200) {
@@ -535,11 +576,16 @@ networks.forEach(function (net) {
 });
 
 return JSON.stringify({ data: data });
-""").strip()
+"""
+).strip()
 
-SSID_DISCOVERY_SCRIPT_BODY = (r"""
+SSID_DISCOVERY_SCRIPT_BODY = (
+    r"""
 var params = JSON.parse(value);
-""" + "\n" + _HTTP_SETUP + r"""
+"""
+    + "\n"
+    + _HTTP_SETUP
+    + r"""
 
 var netResponse = request.get(url + 'organizations/' + encodeURIComponent(params.orgid) + '/networks');
 if (request.getStatus() !== 200) {
@@ -568,11 +614,16 @@ networks.forEach(function (net) {
 });
 
 return JSON.stringify({ data: data });
-""").strip()
+"""
+).strip()
 
-RADIO_DISCOVERY_SCRIPT_BODY = (r"""
+RADIO_DISCOVERY_SCRIPT_BODY = (
+    r"""
 var params = JSON.parse(value);
-""" + "\n" + _HTTP_SETUP + r"""
+"""
+    + "\n"
+    + _HTTP_SETUP
+    + r"""
 
 var response = request.get(url + 'organizations/' + encodeURIComponent(params.orgid) +
   '/wireless/devices/channelUtilization/byDevice?perPage=500');
@@ -593,11 +644,16 @@ devices.forEach(function (dev) {
 });
 
 return JSON.stringify({ data: data });
-""").strip()
+"""
+).strip()
 
-NETWORK_CLIENTCOUNT_SCRIPT_BODY = (r"""
+NETWORK_CLIENTCOUNT_SCRIPT_BODY = (
+    r"""
 var params = JSON.parse(value);
-""" + "\n" + _HTTP_SETUP + r"""
+"""
+    + "\n"
+    + _HTTP_SETUP
+    + r"""
 
 var response = request.get(url + 'networks/' + encodeURIComponent(params.networkid) + '/clients?timespan=300');
 if (request.getStatus() !== 200) {
@@ -605,11 +661,16 @@ if (request.getStatus() !== 200) {
 }
 
 return JSON.parse(response).length;
-""").strip()
+"""
+).strip()
 
-NETWORK_AUTHFAILURES_SCRIPT_BODY = (r"""
+NETWORK_AUTHFAILURES_SCRIPT_BODY = (
+    r"""
 var params = JSON.parse(value);
-""" + "\n" + _HTTP_SETUP + r"""
+"""
+    + "\n"
+    + _HTTP_SETUP
+    + r"""
 
 var response = request.get(url + 'networks/' + encodeURIComponent(params.networkid) +
   '/wireless/failedConnections?timespan=3600');
@@ -619,11 +680,16 @@ if (request.getStatus() !== 200) {
 
 var events = JSON.parse(response);
 return events.filter(function (e) { return e.type === 'auth'; }).length;
-""").strip()
+"""
+).strip()
 
-SSID_AUTHFAILURES_SCRIPT_BODY = (r"""
+SSID_AUTHFAILURES_SCRIPT_BODY = (
+    r"""
 var params = JSON.parse(value);
-""" + "\n" + _HTTP_SETUP + r"""
+"""
+    + "\n"
+    + _HTTP_SETUP
+    + r"""
 
 var response = request.get(url + 'networks/' + encodeURIComponent(params.networkid) +
   '/wireless/failedConnections?timespan=3600&ssidNumber=' + encodeURIComponent(params.ssidnumber));
@@ -633,11 +699,16 @@ if (request.getStatus() !== 200) {
 
 var events = JSON.parse(response);
 return events.filter(function (e) { return e.type === 'auth'; }).length;
-""").strip()
+"""
+).strip()
 
-RADIO_UTILIZATION_SCRIPT_BODY = (r"""
+RADIO_UTILIZATION_SCRIPT_BODY = (
+    r"""
 var params = JSON.parse(value);
-""" + "\n" + _HTTP_SETUP + r"""
+"""
+    + "\n"
+    + _HTTP_SETUP
+    + r"""
 
 var response = request.get(url + 'organizations/' + encodeURIComponent(params.orgid) +
   '/wireless/devices/channelUtilization/byDevice?perPage=500');
@@ -668,7 +739,8 @@ if (band === null) {
 }
 
 return band.utilization != null ? band.utilization : 0;
-""").strip()
+"""
+).strip()
 
 
 def clone_dashboard_template():
@@ -706,17 +778,20 @@ def create_discovery_rule(templateid, name, key, script_body, parameters, lifeti
         return found[0]["itemid"]
 
     print(f"Creating discovery rule '{name}'")
-    result = api_call("discoveryrule.create", {
-        "hostid": templateid,
-        "name": name,
-        "key_": key,
-        "type": 21,  # Script
-        "delay": "{$MERAKI.LLD.INTERVAL}",
-        "timeout": "{$MERAKI.DATA.TIMEOUT}",
-        "lifetime": lifetime,
-        "params": script_body,
-        "parameters": parameters,
-    })
+    result = api_call(
+        "discoveryrule.create",
+        {
+            "hostid": templateid,
+            "name": name,
+            "key_": key,
+            "type": 21,  # Script
+            "delay": "{$MERAKI.LLD.INTERVAL}",
+            "timeout": "{$MERAKI.DATA.TIMEOUT}",
+            "lifetime": lifetime,
+            "params": script_body,
+            "parameters": parameters,
+        },
+    )
     return result["itemids"][0]
 
 
@@ -731,7 +806,7 @@ def create_itemprototype(templateid, ruleid, name, key, script_body, parameters,
         "ruleid": ruleid,
         "name": name,
         "key_": key,
-        "type": 21,        # Script
+        "type": 21,  # Script
         "value_type": value_type,  # 3 = Numeric unsigned
         "delay": "{$MERAKI.LLD.INTERVAL}",
         "timeout": "{$MERAKI.DATA.TIMEOUT}",
@@ -751,12 +826,15 @@ def create_trigger_prototype(templateid, description, expression, priority, tag_
         return found[0]["triggerid"]
 
     print(f"Creating trigger prototype '{description}'")
-    result = api_call("triggerprototype.create", {
-        "description": description,
-        "expression": expression,
-        "priority": priority,
-        "tags": [{"tag": "scope", "value": tag_value}],
-    })
+    result = api_call(
+        "triggerprototype.create",
+        {
+            "description": description,
+            "expression": expression,
+            "priority": priority,
+            "tags": [{"tag": "scope", "value": tag_value}],
+        },
+    )
     return result["triggerids"][0]
 
 
@@ -773,11 +851,18 @@ def create_wireless_health():
 
     # --- Network Discovery: client count + auth failures per network ---
     network_ruleid = create_discovery_rule(
-        templateid, "Network Discovery", "meraki.lld.networks", NETWORK_DISCOVERY_SCRIPT_BODY, api_params,
+        templateid,
+        "Network Discovery",
+        "meraki.lld.networks",
+        NETWORK_DISCOVERY_SCRIPT_BODY,
+        api_params,
     )
     clientcount_key = "meraki.network.clientcount[{#NETWORK_ID}]"
     create_itemprototype(
-        templateid, network_ruleid, "Client count: {#NETWORK_NAME}", clientcount_key,
+        templateid,
+        network_ruleid,
+        "Client count: {#NETWORK_NAME}",
+        clientcount_key,
         NETWORK_CLIENTCOUNT_SCRIPT_BODY,
         [
             {"name": "httpproxy", "value": "{$MERAKI.HTTP_PROXY}"},
@@ -788,7 +873,10 @@ def create_wireless_health():
     )
     net_authfail_key = "meraki.network.authfailures[{#NETWORK_ID}]"
     create_itemprototype(
-        templateid, network_ruleid, "Auth failures (1h): {#NETWORK_NAME}", net_authfail_key,
+        templateid,
+        network_ruleid,
+        "Auth failures (1h): {#NETWORK_NAME}",
+        net_authfail_key,
         NETWORK_AUTHFAILURES_SCRIPT_BODY,
         [
             {"name": "httpproxy", "value": "{$MERAKI.HTTP_PROXY}"},
@@ -809,18 +897,24 @@ def create_wireless_health():
     create_trigger_prototype(
         templateid,
         "Meraki: Wireless health degraded on {#NETWORK_NAME}",
-        f"last(/{DASHBOARD_CLONE_TEMPLATE}/{net_authfail_key})>{{$MERAKI.AUTHFAIL.HIGH}} or "
-        f"last(/{DASHBOARD_CLONE_TEMPLATE}/{clientcount_key})>({{$MERAKI.CLIENTCOUNT.HIGH}}*2)",
+        f"last(/{DASHBOARD_CLONE_TEMPLATE}/{net_authfail_key})>{{$MERAKI.AUTHFAIL.HIGH}} or last(/{DASHBOARD_CLONE_TEMPLATE}/{clientcount_key})>({{$MERAKI.CLIENTCOUNT.HIGH}}*2)",
         3,  # Average
     )
 
     # --- SSID Discovery: per-SSID auth failures ---
     ssid_ruleid = create_discovery_rule(
-        templateid, "SSID Discovery", "meraki.lld.ssids", SSID_DISCOVERY_SCRIPT_BODY, api_params,
+        templateid,
+        "SSID Discovery",
+        "meraki.lld.ssids",
+        SSID_DISCOVERY_SCRIPT_BODY,
+        api_params,
     )
     ssid_authfail_key = "meraki.ssid.authfailures[{#NETWORK_ID},{#SSID_NUMBER}]"
     create_itemprototype(
-        templateid, ssid_ruleid, "Auth failures (1h): {#SSID_NAME} on {#NETWORK_NAME}", ssid_authfail_key,
+        templateid,
+        ssid_ruleid,
+        "Auth failures (1h): {#SSID_NAME} on {#NETWORK_NAME}",
+        ssid_authfail_key,
         SSID_AUTHFAILURES_SCRIPT_BODY,
         [
             {"name": "httpproxy", "value": "{$MERAKI.HTTP_PROXY}"},
@@ -839,10 +933,16 @@ def create_wireless_health():
 
     # --- Radio Discovery: per-AP, per-band channel utilization (data only — not in the trigger list) ---
     radio_ruleid = create_discovery_rule(
-        templateid, "Radio Discovery", "meraki.lld.radios", RADIO_DISCOVERY_SCRIPT_BODY, api_params,
+        templateid,
+        "Radio Discovery",
+        "meraki.lld.radios",
+        RADIO_DISCOVERY_SCRIPT_BODY,
+        api_params,
     )
     create_itemprototype(
-        templateid, radio_ruleid, "Channel utilization: {#AP_NAME} ({#RADIO_BAND}GHz)",
+        templateid,
+        radio_ruleid,
+        "Channel utilization: {#AP_NAME} ({#RADIO_BAND}GHz)",
         "meraki.radio.utilization[{#SERIAL},{#RADIO_BAND}]",
         RADIO_UTILIZATION_SCRIPT_BODY,
         [
@@ -853,7 +953,8 @@ def create_wireless_health():
             {"name": "token", "value": "{$MERAKI.TOKEN}"},
             {"name": "url", "value": "{$MERAKI.API.URL}"},
         ],
-        value_type=0, units="%",  # Numeric float
+        value_type=0,
+        units="%",  # Numeric float
     )
 
     print(f"Done. '{DASHBOARD_CLONE_TEMPLATE}' is ready (templateid {templateid}).")
@@ -866,12 +967,20 @@ def main():
     add_macros(templateid, DEVICE_MACROS)
     script_itemid = create_script_item(templateid)
     create_dependent_item(
-        templateid, script_itemid, "Latency, ms", "meraki.device.ping.latency",
-        "$.result.results.latencies.average", "ms",
+        templateid,
+        script_itemid,
+        "Latency, ms",
+        "meraki.device.ping.latency",
+        "$.result.results.latencies.average",
+        "ms",
     )
     create_dependent_item(
-        templateid, script_itemid, "Packet loss, %", "meraki.device.packetloss.pct",
-        "$.result.results.loss.percentage", "%",
+        templateid,
+        script_itemid,
+        "Packet loss, %",
+        "meraki.device.packetloss.pct",
+        "$.result.results.loss.percentage",
+        "%",
     )
     create_trigger(templateid)
     print(f"Done. '{CLONE_TEMPLATE}' is ready (templateid {templateid}).")
@@ -892,11 +1001,14 @@ def test_item():
     if not hostid:
         raise RuntimeError(f"Host not found: {TEST_HOST}")
 
-    item = api_call("item.get", {
-        "hostids": [hostid],
-        "filter": {"key_": "meraki.get.packetloss"},
-        "output": ["itemid", "history"],
-    })
+    item = api_call(
+        "item.get",
+        {
+            "hostids": [hostid],
+            "filter": {"key_": "meraki.get.packetloss"},
+            "output": ["itemid", "history"],
+        },
+    )
     if not item:
         raise RuntimeError(f"Item not found on {TEST_HOST} — attach the clone template first")
     itemid, original_history = item[0]["itemid"], item[0]["history"]
@@ -906,9 +1018,16 @@ def test_item():
     print("Check-now queued, waiting for a result...")
     time.sleep(5)
 
-    history = api_call("history.get", {
-        "itemids": [itemid], "history": 4, "sortfield": "clock", "sortorder": "DESC", "limit": 1,
-    })
+    history = api_call(
+        "history.get",
+        {
+            "itemids": [itemid],
+            "history": 4,
+            "sortfield": "clock",
+            "sortorder": "DESC",
+            "limit": 1,
+        },
+    )
     if history:
         print("Latest raw value:")
         print(history[0]["value"])
@@ -920,9 +1039,14 @@ def test_item():
 
 
 def _discovery_rule_itemid(templateid):
-    rules = api_call("discoveryrule.get", {
-        "templateids": [templateid], "filter": {"name": [DISCOVERY_RULE_NAME]}, "output": ["itemid"],
-    })
+    rules = api_call(
+        "discoveryrule.get",
+        {
+            "templateids": [templateid],
+            "filter": {"name": [DISCOVERY_RULE_NAME]},
+            "output": ["itemid"],
+        },
+    )
     if not rules:
         raise RuntimeError(f"Discovery rule '{DISCOVERY_RULE_NAME}' not found")
     return rules[0]["itemid"]
@@ -947,9 +1071,14 @@ def _resync_org_host():
     if not org_hostid:
         print(f"Org host '{ORG_HOST}' not found — re-sync it manually.")
         return
-    org_rules = api_call("discoveryrule.get", {
-        "hostids": [org_hostid], "filter": {"name": [DISCOVERY_RULE_NAME]}, "output": ["itemid"],
-    })
+    org_rules = api_call(
+        "discoveryrule.get",
+        {
+            "hostids": [org_hostid],
+            "filter": {"name": [DISCOVERY_RULE_NAME]},
+            "output": ["itemid"],
+        },
+    )
     if not org_rules:
         print("Discovery rule instance not found on org host — re-sync it manually.")
         return
