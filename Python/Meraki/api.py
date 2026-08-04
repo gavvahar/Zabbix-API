@@ -3,7 +3,6 @@ shared by every provisioning step (create, ap-health, wireless, ops).
 """
 
 import json, requests
-
 from config import ZABBIX_URL, ZABBIX_TOKEN
 
 
