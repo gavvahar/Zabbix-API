@@ -39,10 +39,15 @@ def get_host_id(name):
 
 
 def strip_uuids(obj):
-    """Recursively strip 'uuid' keys from a decoded configuration export, in place."""
-    # Zabbix matches templates by uuid before name; keeping the source
-    # template's uuid on the renamed copy makes import treat it as the
-    # same template and conflict with the original.
+    """Recursively strip 'uuid' keys from a decoded configuration export, in place.
+
+    Callers should scope this to the export's "templates" subtree only —
+    Zabbix matches templates by uuid before name, so keeping the source
+    template's uuid on the renamed copy makes import treat it as the same
+    template and conflict with the original. Other top-level sections like
+    "host_groups" reference existing objects by uuid and require the field
+    to stay present, or import fails validation.
+    """
     if isinstance(obj, dict):
         obj.pop("uuid", None)
         for v in obj.values():
@@ -66,7 +71,7 @@ def clone_template(source_name, clone_name):
     tmpl = data["zabbix_export"]["templates"][0]
     tmpl["template"] = clone_name
     tmpl["name"] = clone_name
-    strip_uuids(data["zabbix_export"])
+    strip_uuids(data["zabbix_export"]["templates"])
 
     rules = {
         "template_groups": {"createMissing": True},
