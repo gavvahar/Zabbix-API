@@ -32,7 +32,7 @@ Environment variables:
 
 NOT built here — "AP Discovery" from the follow-up list:
 The official dashboard template already discovers one host per device via
-its "Get data: Devices discovery" LLD rule (see DISCOVERY_RULE_NAME in
+its "Devices discovery" LLD rule (see DISCOVERY_RULE_NAME in
 config.py). A second discovery rule that also creates per-AP hosts
 would collide with those (duplicate host errors). AP-level metrics (status,
 firmware, latency) are instead added as static items on the device template

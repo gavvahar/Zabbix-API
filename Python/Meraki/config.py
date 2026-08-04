@@ -22,7 +22,7 @@ SOURCE_TEMPLATE = "Cisco Meraki device by HTTP"
 CLONE_TEMPLATE = "Cisco Meraki device by HTTP - Packet Loss"
 DASHBOARD_TEMPLATE = "Cisco Meraki dashboard by HTTP"
 DASHBOARD_CLONE_TEMPLATE = "Cisco Meraki dashboard by HTTP - Wireless Health"
-DISCOVERY_RULE_NAME = "Get data: Devices discovery"
+DISCOVERY_RULE_NAME = "Devices discovery"
 
 # {$MERAKI.ORG.ID} is assumed to already exist on the dashboard template
 # (org-scoped calls need it) — reuse it, same as {$MERAKI.API.URL} / {$MERAKI.TOKEN}.

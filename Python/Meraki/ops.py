@@ -59,15 +59,31 @@ def test_item():
     print(f"History reverted to '{original_history}'.")
 
 
-def _discovery_rule_itemid(templateid):
-    """Look up the itemid of the official devices discovery rule on a template."""
+def _find_discovery_rule_itemid():
+    """Find the devices-discovery rule's itemid.
+
+    Prefers ZABBIX_ORG_HOST's own live instance of the rule, if that host
+    var is set and resolvable — this works regardless of whether the org
+    host currently carries the official dashboard template or a clone made
+    by the `wireless` action, since hostprototype.get accepts either a
+    template-level or a host-level (inherited) discovery rule itemid.
+    Falls back to the official dashboard template's own copy when
+    ZABBIX_ORG_HOST isn't set, matching the original behavior.
+    """
+    if ORG_HOST:
+        org_hostid = get_host_id(ORG_HOST)
+        if org_hostid:
+            rules = api_call(
+                "discoveryrule.get",
+                {"hostids": [org_hostid], "filter": {"name": [DISCOVERY_RULE_NAME]}, "output": ["itemid"]},
+            )
+            if rules:
+                return rules[0]["itemid"]
+
+    dash_id = get_template_id(DASHBOARD_TEMPLATE)
     rules = api_call(
         "discoveryrule.get",
-        {
-            "templateids": [templateid],
-            "filter": {"name": [DISCOVERY_RULE_NAME]},
-            "output": ["itemid"],
-        },
+        {"templateids": [dash_id], "filter": {"name": [DISCOVERY_RULE_NAME]}, "output": ["itemid"]},
     )
     if not rules:
         raise RuntimeError(f"Discovery rule '{DISCOVERY_RULE_NAME}' not found")
@@ -76,8 +92,7 @@ def _discovery_rule_itemid(templateid):
 
 def _relink_prototype(new_templateid):
     """Point the device-discovery host prototype's template link at new_templateid."""
-    dash_id = get_template_id(DASHBOARD_TEMPLATE)
-    druleid = _discovery_rule_itemid(dash_id)
+    druleid = _find_discovery_rule_itemid()
     prototypes = api_call("hostprototype.get", {"discoveryids": [druleid], "output": ["hostid", "host"]})
     if not prototypes:
         raise RuntimeError("No host prototype found on that discovery rule")
