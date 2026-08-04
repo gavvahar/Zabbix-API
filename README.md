@@ -18,6 +18,7 @@ Small collection of Python helpers for pulling data out of the [Zabbix API](http
 
    - `ZABBIX_URL` — the JSON-RPC endpoint of your Zabbix server, e.g. `https://zabbix.example.com/api_jsonrpc.php`.
    - `ZABBIX_API_TOKEN` — a Zabbix API token ([how to generate one](https://www.zabbix.com/documentation/current/en/manual/web_interface/frontend_sections/users/api_tokens)), sent as a `Bearer` token (Zabbix 6.4+).
+   - `ZABBIX_ORG_HOST` / `ZABBIX_TEST_HOST` — optional, only needed by [`Python/Meraki/provision.py`](Python/Meraki/provision.py)'s `rollout`/`test` actions (see below).
 
 ## Usage
 
@@ -34,6 +35,27 @@ hosts.get_hosts("Linux servers")
 - `lib.py` — shared API helpers: base URL, token, and a `call` JSON-RPC request wrapper.
 - `hostgroups.py` — list host groups and look up a host group id by name.
 - `hosts.py` — list hosts, optionally filtered to a host group.
+
+### Meraki wireless monitoring
+
+[`Python/Meraki/provision.py`](Python/Meraki/provision.py) provisions Meraki wireless monitoring in Zabbix end to end — cloning templates, adding items/triggers, and wiring up discovery rules — driven entirely by the API rather than manual template edits. Run it from the `Python/Meraki` directory:
+
+```bash
+cd Python/Meraki
+python provision.py create      # clone the device template, add the packet loss item + trigger
+python provision.py ap-health   # extend the clone: device status, AP Down, Firmware Outdated, High Latency, API Failure
+python provision.py wireless    # clone the dashboard template, add Network/SSID/Radio discovery + triggers
+python provision.py test        # force-run the packet loss item on ZABBIX_TEST_HOST and print the raw result
+python provision.py rollout     # repoint the device-discovery host prototype at the clone (fleet-wide)
+python provision.py rollback    # undo rollout
+```
+
+Requires Zabbix 6.4+ (Script item type, item-level timeout override, `task.create` check-now). The implementation is split across sibling modules in `Python/Meraki/`:
+
+- `config.py` — env vars, template names, tuning macros.
+- `scripts.py` — the Zabbix Script item JavaScript bodies.
+- `api.py` — Zabbix JSON-RPC wrapper and shared lookup/template helpers.
+- `create.py`, `aphealth.py`, `wireless.py`, `ops.py` — one module per CLI action.
 
 ## Development
 
