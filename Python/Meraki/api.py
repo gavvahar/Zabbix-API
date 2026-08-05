@@ -99,10 +99,7 @@ def clone_template(source_name, clone_name, recreate=False):
         linked_hosts = existing[0]["hosts"]
         if linked_hosts:
             host_names = ", ".join(h["host"] for h in linked_hosts)
-            raise RuntimeError(
-                f"Refusing to recreate '{clone_name}': it's linked to live host(s) ({host_names}). "
-                "Run `rollback` (or detach it manually) first, then recreate."
-            )
+            raise RuntimeError(f"Refusing to recreate '{clone_name}': it's linked to live host(s) ({host_names}). Run `rollback` (or detach it manually) first, then recreate.")
 
         print(f"'{clone_name}' already exists, deleting it to recreate from scratch.")
         api_call("template.delete", [existing[0]["templateid"]])
