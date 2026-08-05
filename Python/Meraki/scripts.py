@@ -583,6 +583,87 @@ return JSON.stringify({
 """
 ).strip()
 
+NETWORK_LATENCYSTATS_SCRIPT_BODY = (
+    r"""
+var params = JSON.parse(value);
+"""
+    + "\n"
+    + _HTTP_SETUP
+    + r"""
+
+var error_msg = '';
+var result = {};
+
+try {
+  var response = request.get(url + 'networks/' + encodeURIComponent(params.networkid) +
+    '/wireless/latencyStats?timespan=3600');
+  if (request.getStatus() !== 200) {
+    throw 'Failed to get latency stats: status ' + request.getStatus();
+  }
+  var stats = JSON.parse(response);
+  result = {
+    voice: (stats.voiceTraffic && stats.voiceTraffic.avg != null) ? stats.voiceTraffic.avg : 0,
+    video: (stats.videoTraffic && stats.videoTraffic.avg != null) ? stats.videoTraffic.avg : 0,
+    bestEffort: (stats.bestEffortTraffic && stats.bestEffortTraffic.avg != null) ? stats.bestEffortTraffic.avg : 0,
+    background: (stats.backgroundTraffic && stats.backgroundTraffic.avg != null) ? stats.backgroundTraffic.avg : 0
+  };
+} catch (error) {
+  error_msg = error.toString();
+}
+
+return JSON.stringify({
+  'result': result,
+  'error': error_msg
+});
+"""
+).strip()
+
+# wireless/usageHistory rejects network-wide calls outright ("Must specify a
+# device or network client", confirmed against the live API — its own docs
+# are misleading here). Per-client usage from /clients (already used for
+# client count) sums cleanly into network-wide throughput instead.
+NETWORK_CLIENTUSAGE_SCRIPT_BODY = (
+    r"""
+var params = JSON.parse(value);
+"""
+    + "\n"
+    + _HTTP_SETUP
+    + r"""
+
+var error_msg = '';
+var result = {};
+
+try {
+  var response = request.get(url + 'networks/' + encodeURIComponent(params.networkid) + '/clients?timespan=300');
+  if (request.getStatus() !== 200) {
+    throw 'Failed to list clients: status ' + request.getStatus();
+  }
+  var clients = JSON.parse(response);
+  var sentKB = 0;
+  var recvKB = 0;
+  clients.forEach(function (c) {
+    if (c.usage) {
+      sentKB += c.usage.sent || 0;
+      recvKB += c.usage.recv || 0;
+    }
+  });
+  var timespanSeconds = 300;
+  result = {
+    sentKbps: (sentKB * 8) / timespanSeconds,
+    receivedKbps: (recvKB * 8) / timespanSeconds,
+    totalKbps: ((sentKB + recvKB) * 8) / timespanSeconds
+  };
+} catch (error) {
+  error_msg = error.toString();
+}
+
+return JSON.stringify({
+  'result': result,
+  'error': error_msg
+});
+"""
+).strip()
+
 RADIO_UTILIZATION_SCRIPT_BODY = (
     r"""
 var params = JSON.parse(value);

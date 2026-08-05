@@ -20,6 +20,8 @@ from scripts import (
     SSID_CLIENTCOUNT_SCRIPT_BODY,
     NETWORK_CONNECTIONSTATS_SCRIPT_BODY,
     SSID_CONNECTIONSTATS_SCRIPT_BODY,
+    NETWORK_LATENCYSTATS_SCRIPT_BODY,
+    NETWORK_CLIENTUSAGE_SCRIPT_BODY,
     RADIO_UTILIZATION_SCRIPT_BODY,
     RADIO_STATUS_SCRIPT_BODY,
 )
@@ -246,6 +248,85 @@ def create_wireless_health(recreate=False):
         "Meraki: Wireless health degraded on {#NETWORK_NAME}",
         f"last(/{DASHBOARD_CLONE_TEMPLATE}/{net_authfail_key})>{{$MERAKI.AUTHFAIL.HIGH}} or last(/{DASHBOARD_CLONE_TEMPLATE}/{clientcount_key})>({{$MERAKI.CLIENTCOUNT.HIGH}}*2)",
         3,  # Average
+    )
+
+    net_latency_itemid = create_itemprototype(
+        templateid,
+        network_ruleid,
+        "Latency stats: {#NETWORK_NAME}",
+        "meraki.network.latencystats[{#NETWORK_ID}]",
+        NETWORK_LATENCYSTATS_SCRIPT_BODY,
+        [
+            {"name": "httpproxy", "value": "{$MERAKI.HTTP_PROXY}"},
+            {"name": "networkid", "value": "{#NETWORK_ID}"},
+            {"name": "token", "value": "{$MERAKI.TOKEN}"},
+            {"name": "url", "value": "{$MERAKI.API.URL}"},
+        ],
+        value_type=4,  # Text (raw JSON, mirrored by dependent items below)
+        history="0",  # Do not store
+        tags=network_tags,
+    )
+    for category, jsonfield in (("Voice", "voice"), ("Video", "video"), ("Best effort", "bestEffort"), ("Background", "background")):
+        create_dependent_itemprototype(
+            templateid,
+            network_ruleid,
+            net_latency_itemid,
+            f"{category} latency (1h): {{#NETWORK_NAME}}",
+            f"meraki.network.latency.{jsonfield.lower()}[{{#NETWORK_ID}}]",
+            f"$.result.{jsonfield}",
+            value_type=0,  # Numeric float
+            units="ms",
+            tags=network_tags,
+        )
+
+    net_usage_itemid = create_itemprototype(
+        templateid,
+        network_ruleid,
+        "Wireless usage: {#NETWORK_NAME}",
+        "meraki.network.usage[{#NETWORK_ID}]",
+        NETWORK_CLIENTUSAGE_SCRIPT_BODY,
+        [
+            {"name": "httpproxy", "value": "{$MERAKI.HTTP_PROXY}"},
+            {"name": "networkid", "value": "{#NETWORK_ID}"},
+            {"name": "token", "value": "{$MERAKI.TOKEN}"},
+            {"name": "url", "value": "{$MERAKI.API.URL}"},
+        ],
+        value_type=4,  # Text (raw JSON, mirrored by dependent items below)
+        history="0",  # Do not store
+        tags=network_tags,
+    )
+    create_dependent_itemprototype(
+        templateid,
+        network_ruleid,
+        net_usage_itemid,
+        "Upload throughput: {#NETWORK_NAME}",
+        "meraki.network.throughput.up[{#NETWORK_ID}]",
+        "$.result.sentKbps",
+        value_type=0,  # Numeric float
+        units="Kbps",
+        tags=network_tags,
+    )
+    create_dependent_itemprototype(
+        templateid,
+        network_ruleid,
+        net_usage_itemid,
+        "Download throughput: {#NETWORK_NAME}",
+        "meraki.network.throughput.down[{#NETWORK_ID}]",
+        "$.result.receivedKbps",
+        value_type=0,  # Numeric float
+        units="Kbps",
+        tags=network_tags,
+    )
+    create_dependent_itemprototype(
+        templateid,
+        network_ruleid,
+        net_usage_itemid,
+        "Total wireless usage: {#NETWORK_NAME}",
+        "meraki.network.throughput.total[{#NETWORK_ID}]",
+        "$.result.totalKbps",
+        value_type=0,  # Numeric float
+        units="Kbps",
+        tags=network_tags,
     )
 
     # --- SSID Discovery: per-SSID auth failures ---
