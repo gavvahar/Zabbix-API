@@ -91,9 +91,9 @@ def create_trigger(templateid):
     return result["triggerids"][0]
 
 
-def main():
+def main(recreate=False):
     """Run the `create` action: clone the device template and add the packet loss item, dependent items, and trigger."""
-    templateid = clone_template(SOURCE_TEMPLATE, CLONE_TEMPLATE)
+    templateid = clone_template(SOURCE_TEMPLATE, CLONE_TEMPLATE, recreate=recreate)
     add_macros(templateid, DEVICE_MACROS)
     script_itemid = create_script_item(templateid)
     create_dependent_item(

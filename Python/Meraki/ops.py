@@ -59,16 +59,34 @@ def test_item():
     print(f"History reverted to '{original_history}'.")
 
 
+def _resolve_native_discoveryrule_itemid(itemid):
+    """Walk up the template-inheritance chain to the discovery rule's native
+    (non-inherited) itemid.
+
+    Zabbix refuses hostprototype.update on the "templates" field of a host
+    prototype that's inherited from a template ("cannot update readonly
+    parameter ... of inherited object") — that link can only be edited where
+    the discovery rule is natively defined, and inherited copies then pick up
+    the change automatically. discoveryrule.get's "templateid" field points at
+    the immediate parent's itemid when inherited, "0" when native.
+    """
+    while True:
+        rule = api_call("discoveryrule.get", {"itemids": [itemid], "output": ["itemid", "templateid"]})[0]
+        if rule["templateid"] == "0":
+            return itemid
+        itemid = rule["templateid"]
+
+
 def _find_discovery_rule_itemid():
-    """Find the devices-discovery rule's itemid.
+    """Find the devices-discovery rule's native (editable) itemid.
 
     Prefers ZABBIX_ORG_HOST's own live instance of the rule, if that host
     var is set and resolvable — this works regardless of whether the org
     host currently carries the official dashboard template or a clone made
-    by the `wireless` action, since hostprototype.get accepts either a
-    template-level or a host-level (inherited) discovery rule itemid.
-    Falls back to the official dashboard template's own copy when
-    ZABBIX_ORG_HOST isn't set, matching the original behavior.
+    by the `wireless` action, walking up to the owning template's copy if
+    the org host's instance turns out to be inherited. Falls back to the
+    official dashboard template's own copy when ZABBIX_ORG_HOST isn't set,
+    matching the original behavior.
     """
     if ORG_HOST:
         org_hostid = get_host_id(ORG_HOST)
@@ -78,7 +96,7 @@ def _find_discovery_rule_itemid():
                 {"hostids": [org_hostid], "filter": {"name": [DISCOVERY_RULE_NAME]}, "output": ["itemid"]},
             )
             if rules:
-                return rules[0]["itemid"]
+                return _resolve_native_discoveryrule_itemid(rules[0]["itemid"])
 
     dash_id = get_template_id(DASHBOARD_TEMPLATE)
     rules = api_call(

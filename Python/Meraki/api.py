@@ -82,12 +82,30 @@ def reset_uuids(obj):
             reset_uuids(item)
 
 
-def clone_template(source_name, clone_name):
-    """Clone source_name to clone_name via export/import, or return the existing clone's id."""
-    existing = api_call("template.get", {"filter": {"host": [clone_name]}})
+def clone_template(source_name, clone_name, recreate=False):
+    """Clone source_name to clone_name via export/import, or return the existing
+    clone's id. If recreate is True and the clone already exists, delete and
+    rebuild it from scratch instead of skipping — unless it's currently linked
+    to live hosts (e.g. via `rollout`), in which case it refuses and tells the
+    caller to `rollback` first, rather than pulling a template out from under
+    hosts that depend on it.
+    """
+    existing = api_call("template.get", {"filter": {"host": [clone_name]}, "selectHosts": ["hostid", "host"]})
     if existing:
-        print(f"'{clone_name}' already exists, skipping clone.")
-        return existing[0]["templateid"]
+        if not recreate:
+            print(f"'{clone_name}' already exists, skipping clone.")
+            return existing[0]["templateid"]
+
+        linked_hosts = existing[0]["hosts"]
+        if linked_hosts:
+            host_names = ", ".join(h["host"] for h in linked_hosts)
+            raise RuntimeError(
+                f"Refusing to recreate '{clone_name}': it's linked to live host(s) ({host_names}). "
+                "Run `rollback` (or detach it manually) first, then recreate."
+            )
+
+        print(f"'{clone_name}' already exists, deleting it to recreate from scratch.")
+        api_call("template.delete", [existing[0]["templateid"]])
 
     print(f"Cloning '{source_name}' -> '{clone_name}'")
     src_id = get_template_id(source_name)

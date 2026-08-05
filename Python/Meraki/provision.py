@@ -20,6 +20,11 @@ Automates instructions.md plus the wireless-health follow-up list end to end:
 `test`, `rollout`, and `rollback` touch a real host or the fleet-wide discovery
 rule, so they're deliberately left out of `all` — run them one at a time.
 
+Add `--recreate` to `all`/`create`/`wireless` to delete and rebuild an
+already-existing clone from scratch instead of skipping it (e.g. after
+changing scripts.py/wireless.py and wanting a truly fresh clone). Refuses and
+tells you to `rollback` first if the clone is currently linked to live hosts.
+
 Requires Zabbix 6.4+ (Script item type, item-level timeout override,
 task.create check-now). Requires `requests` (pip install requests) and a
 Zabbix API token (Users > API tokens) with read/write on the relevant hosts.
@@ -65,24 +70,26 @@ from wireless import create_wireless_health
 from ops import test_item, rollout, rollback
 
 
-def main_all():
+def main_all(recreate=False):
     """Run `create`, `ap-health`, and `wireless` in sequence."""
-    main()
+    main(recreate)
     main_ap_health()
-    create_wireless_health()
+    create_wireless_health(recreate)
 
 
 if __name__ == "__main__":
-    action = sys.argv[1] if len(sys.argv) > 1 else "create"
+    args = sys.argv[1:]
+    action = args[0] if args else "create"
+    recreate = "--recreate" in args
     {
-        "all": main_all,
-        "create": main,
+        "all": lambda: main_all(recreate),
+        "create": lambda: main(recreate),
         "ap-health": main_ap_health,
-        "wireless": create_wireless_health,
+        "wireless": lambda: create_wireless_health(recreate),
         "test": test_item,
         "rollout": rollout,
         "rollback": rollback,
     }.get(
         action,
-        lambda: print("Usage: python provision.py [all|create|ap-health|wireless|test|rollout|rollback]"),
+        lambda: print("Usage: python provision.py [all|create|ap-health|wireless|test|rollout|rollback] [--recreate]"),
     )()

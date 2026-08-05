@@ -24,8 +24,11 @@ DASHBOARD_TEMPLATE = "Cisco Meraki dashboard by HTTP"
 DASHBOARD_CLONE_TEMPLATE = "Cisco Meraki dashboard by HTTP - Wireless Health"
 DISCOVERY_RULE_NAME = "Devices discovery"
 
-# {$MERAKI.ORG.ID} is assumed to already exist on the dashboard template
-# (org-scoped calls need it) — reuse it, same as {$MERAKI.API.URL} / {$MERAKI.TOKEN}.
+# {$MERAKI.ORG.ID} does NOT already exist on either the device or dashboard
+# official templates (they discover organizations/devices via their own LLD
+# rules instead of a static org id) — org-scoped calls in scripts.py (device
+# status poller, Network/SSID/Radio Discovery) need a real value here, or
+# Zabbix sends the literal unresolved macro text and Meraki's API 404s.
 DEVICE_MACROS = {
     "{$MERAKI.PING.COUNT}": "5",
     "{$MERAKI.PING.INTERVAL}": "5m",
@@ -34,6 +37,7 @@ DEVICE_MACROS = {
     "{$MERAKI.PING.LATENCY.HIGH}": "100",  # ms
     "{$MERAKI.DEVICESTATUS.INTERVAL}": "5m",
     "{$MERAKI.FIRMWARE.EXPECTED}": "",  # blank = Firmware Outdated trigger stays inactive until set
+    "{$MERAKI.ORG.ID}": "CHANGE_IF_NEEDED",
 }
 
 DASHBOARD_MACROS = {
@@ -41,6 +45,7 @@ DASHBOARD_MACROS = {
     "{$MERAKI.CLIENTCOUNT.HIGH}": "50",
     "{$MERAKI.AUTHFAIL.HIGH}": "20",
     "{$MERAKI.AUTHFAIL.SSID.HIGH}": "10",
+    "{$MERAKI.ORG.ID}": "CHANGE_IF_NEEDED",
 }
 
 TRIGGER_DESCRIPTION = "Meraki: Packet loss to {$MERAKI.PING.TARGET} > {$MERAKI.PING.LOSS}%"

@@ -124,9 +124,9 @@ def create_trigger_prototype(templateid, description, expression, priority, tag_
     return result["triggerids"][0]
 
 
-def create_wireless_health():
+def create_wireless_health(recreate=False):
     """Run the `wireless` action: clone the dashboard template and add Network/SSID/Radio discovery with their item and trigger prototypes."""
-    templateid = clone_template(DASHBOARD_TEMPLATE, DASHBOARD_CLONE_TEMPLATE)
+    templateid = clone_template(DASHBOARD_TEMPLATE, DASHBOARD_CLONE_TEMPLATE, recreate=recreate)
     add_macros(templateid, DASHBOARD_MACROS)
 
     api_params = [

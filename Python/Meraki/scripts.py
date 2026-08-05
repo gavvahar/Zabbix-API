@@ -206,10 +206,17 @@ if (request.getStatus() !== 200) {
 var networks = JSON.parse(netResponse);
 
 var data = [];
+var failures = [];
 networks.forEach(function (net) {
   var ssidResponse = request.get(url + 'networks/' + encodeURIComponent(net.id) + '/wireless/ssids');
-  if (request.getStatus() !== 200) {
-    return; // network has no wireless capability (e.g. appliance-only) — skip it
+  var status = request.getStatus();
+  if (status !== 200) {
+    // Legitimately non-wireless networks (e.g. appliance-only) 404 here — that's
+    // fine to skip. But silently swallowing EVERY status code hides real failures
+    // (auth/permission errors, wrong path, etc.), so failures are collected and
+    // only ignored if at least one network came back with real SSID data.
+    failures.push(net.name + ' (' + net.id + '): status ' + status + ' - ' + (ssidResponse || '').substring(0, 200));
+    return;
   }
   var ssids = JSON.parse(ssidResponse);
   ssids.forEach(function (ssid) {
@@ -224,6 +231,10 @@ networks.forEach(function (net) {
     });
   });
 });
+
+if (data.length === 0 && failures.length > 0) {
+  throw 'No SSIDs found; per-network failures: ' + failures.join(' | ');
+}
 
 return JSON.stringify({ data: data });
 """
