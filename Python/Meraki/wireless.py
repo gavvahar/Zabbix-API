@@ -48,7 +48,7 @@ def create_discovery_rule(templateid, name, key, script_body, parameters, lifeti
     return result["itemids"][0]
 
 
-def create_itemprototype(templateid, ruleid, name, key, script_body, parameters, value_type=3, units=None, history="31d"):
+def create_itemprototype(templateid, ruleid, name, key, script_body, parameters, value_type=3, units=None, history="31d", tags=None):
     """Create an item prototype under the discovery rule, or return its existing id."""
     found = api_call("itemprototype.get", {"hostids": [templateid], "filter": {"key_": key}})
     if found:
@@ -70,11 +70,13 @@ def create_itemprototype(templateid, ruleid, name, key, script_body, parameters,
     }
     if units:
         payload["units"] = units
+    if tags:
+        payload["tags"] = tags
     result = api_call("itemprototype.create", payload)
     return result["itemids"][0]
 
 
-def create_dependent_itemprototype(templateid, ruleid, master_itemid, name, key, jsonpath, value_type=3, units=None):
+def create_dependent_itemprototype(templateid, ruleid, master_itemid, name, key, jsonpath, value_type=3, units=None, tags=None):
     """Create a dependent item prototype that extracts jsonpath from the master item prototype's JSON, or return its existing id."""
     found = api_call("itemprototype.get", {"hostids": [templateid], "filter": {"key_": key}})
     if found:
@@ -101,6 +103,8 @@ def create_dependent_itemprototype(templateid, ruleid, master_itemid, name, key,
     }
     if units:
         payload["units"] = units
+    if tags:
+        payload["tags"] = tags
     result = api_call("itemprototype.create", payload)
     return result["itemids"][0]
 
@@ -135,6 +139,9 @@ def create_wireless_health(recreate=False):
         {"name": "token", "value": "{$MERAKI.TOKEN}"},
         {"name": "url", "value": "{$MERAKI.API.URL}"},
     ]
+    network_tags = [{"tag": "component", "value": "network"}]
+    ssid_tags = [{"tag": "component", "value": "ssid"}]
+    radio_tags = [{"tag": "component", "value": "radio"}]
 
     # --- Network Discovery: client count + auth failures per network ---
     network_ruleid = create_discovery_rule(
@@ -157,6 +164,7 @@ def create_wireless_health(recreate=False):
             {"name": "token", "value": "{$MERAKI.TOKEN}"},
             {"name": "url", "value": "{$MERAKI.API.URL}"},
         ],
+        tags=network_tags,
     )
     net_authfail_key = "meraki.network.authfailures[{#NETWORK_ID}]"
     create_itemprototype(
@@ -171,6 +179,7 @@ def create_wireless_health(recreate=False):
             {"name": "token", "value": "{$MERAKI.TOKEN}"},
             {"name": "url", "value": "{$MERAKI.API.URL}"},
         ],
+        tags=network_tags,
     )
     net_connstats_itemid = create_itemprototype(
         templateid,
@@ -186,6 +195,7 @@ def create_wireless_health(recreate=False):
         ],
         value_type=4,  # Text (raw JSON, mirrored by dependent items below)
         history="0",  # Do not store
+        tags=network_tags,
     )
     create_dependent_itemprototype(
         templateid,
@@ -194,6 +204,7 @@ def create_wireless_health(recreate=False):
         "DHCP failures (1h): {#NETWORK_NAME}",
         "meraki.network.dhcpfailures[{#NETWORK_ID}]",
         "$.result.dhcp",
+        tags=network_tags,
     )
     create_dependent_itemprototype(
         templateid,
@@ -202,6 +213,7 @@ def create_wireless_health(recreate=False):
         "DNS failures (1h): {#NETWORK_NAME}",
         "meraki.network.dnsfailures[{#NETWORK_ID}]",
         "$.result.dns",
+        tags=network_tags,
     )
     create_dependent_itemprototype(
         templateid,
@@ -212,6 +224,7 @@ def create_wireless_health(recreate=False):
         "$.result.successRatePct",
         value_type=0,  # Numeric float
         units="%",
+        tags=network_tags,
     )
     create_trigger_prototype(
         templateid,
@@ -251,6 +264,7 @@ def create_wireless_health(recreate=False):
             {"name": "token", "value": "{$MERAKI.TOKEN}"},
             {"name": "url", "value": "{$MERAKI.API.URL}"},
         ],
+        tags=ssid_tags,
     )
     create_trigger_prototype(
         templateid,
@@ -271,6 +285,7 @@ def create_wireless_health(recreate=False):
             {"name": "token", "value": "{$MERAKI.TOKEN}"},
             {"name": "url", "value": "{$MERAKI.API.URL}"},
         ],
+        tags=ssid_tags,
     )
     ssid_connstats_itemid = create_itemprototype(
         templateid,
@@ -287,6 +302,7 @@ def create_wireless_health(recreate=False):
         ],
         value_type=4,  # Text (raw JSON, mirrored by dependent items below)
         history="0",  # Do not store
+        tags=ssid_tags,
     )
     create_dependent_itemprototype(
         templateid,
@@ -295,6 +311,7 @@ def create_wireless_health(recreate=False):
         "DHCP failures (1h): {#SSID_NAME} on {#NETWORK_NAME}",
         "meraki.ssid.dhcpfailures[{#NETWORK_ID},{#SSID_NUMBER}]",
         "$.result.dhcp",
+        tags=ssid_tags,
     )
     create_dependent_itemprototype(
         templateid,
@@ -303,6 +320,7 @@ def create_wireless_health(recreate=False):
         "DNS failures (1h): {#SSID_NAME} on {#NETWORK_NAME}",
         "meraki.ssid.dnsfailures[{#NETWORK_ID},{#SSID_NUMBER}]",
         "$.result.dns",
+        tags=ssid_tags,
     )
     create_dependent_itemprototype(
         templateid,
@@ -313,6 +331,7 @@ def create_wireless_health(recreate=False):
         "$.result.successRatePct",
         value_type=0,  # Numeric float
         units="%",
+        tags=ssid_tags,
     )
 
     # --- Radio Discovery: per-AP, per-band channel utilization (data only — not in the trigger list) ---
@@ -339,6 +358,7 @@ def create_wireless_health(recreate=False):
         ],
         value_type=0,
         units="%",  # Numeric float
+        tags=radio_tags,
     )
 
     print(f"Done. '{DASHBOARD_CLONE_TEMPLATE}' is ready (templateid {templateid}).")
