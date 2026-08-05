@@ -6,6 +6,10 @@ Environment variables (read from the repo-root .env, see .env.example):
   ZABBIX_API_TOKEN    API token (Bearer)
   ZABBIX_ORG_HOST     org-level Meraki host name (needed for `rollout`)
   ZABBIX_TEST_HOST    a host with the clone already attached (needed for `test`)
+  MERAKI_ORG_ID       Meraki organization id (needed by Network/SSID/Radio
+                       Discovery and the AP-health status-poller fallback —
+                       without it, every clone/recreate ships with a
+                       CHANGE_IF_NEEDED placeholder that must be set by hand)
 """
 
 import os
@@ -17,6 +21,7 @@ ZABBIX_URL = os.environ["ZABBIX_URL"].rstrip("/")
 ZABBIX_TOKEN = os.environ["ZABBIX_API_TOKEN"]
 ORG_HOST = os.environ.get("ZABBIX_ORG_HOST", "").strip()
 TEST_HOST = os.environ.get("ZABBIX_TEST_HOST", "").strip()
+MERAKI_ORG_ID = os.environ.get("MERAKI_ORG_ID", "").strip() or "CHANGE_IF_NEEDED"
 
 SOURCE_TEMPLATE = "Cisco Meraki device by HTTP"
 CLONE_TEMPLATE = "Cisco Meraki device by HTTP - Packet Loss"
@@ -37,7 +42,7 @@ DEVICE_MACROS = {
     "{$MERAKI.PING.LATENCY.HIGH}": "100",  # ms
     "{$MERAKI.DEVICESTATUS.INTERVAL}": "5m",
     "{$MERAKI.FIRMWARE.EXPECTED}": "",  # blank = Firmware Outdated trigger stays inactive until set
-    "{$MERAKI.ORG.ID}": "CHANGE_IF_NEEDED",
+    "{$MERAKI.ORG.ID}": MERAKI_ORG_ID,
 }
 
 DASHBOARD_MACROS = {
@@ -45,7 +50,7 @@ DASHBOARD_MACROS = {
     "{$MERAKI.CLIENTCOUNT.HIGH}": "50",
     "{$MERAKI.AUTHFAIL.HIGH}": "20",
     "{$MERAKI.AUTHFAIL.SSID.HIGH}": "10",
-    "{$MERAKI.ORG.ID}": "CHANGE_IF_NEEDED",
+    "{$MERAKI.ORG.ID}": MERAKI_ORG_ID,
 }
 
 TRIGGER_DESCRIPTION = "Meraki: Packet loss to {$MERAKI.PING.TARGET} > {$MERAKI.PING.LOSS}%"
