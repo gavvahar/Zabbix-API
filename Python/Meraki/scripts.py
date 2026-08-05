@@ -248,25 +248,95 @@ var params = JSON.parse(value);
     + _HTTP_SETUP
     + r"""
 
+// Uses the SSID-status-by-device endpoint (not channelUtilization/byDevice)
+// specifically because it exposes each radio's index — some APs run two
+// physical radios on the same band (e.g. dual 5GHz), which channel
+// utilization alone can't distinguish. {#RADIO_INDEX} is what makes those
+// radios discoverable as separate entities instead of colliding.
 var response = request.get(url + 'organizations/' + encodeURIComponent(params.orgid) +
-  '/wireless/devices/channelUtilization/byDevice?perPage=500');
+  '/wireless/ssids/statuses/byDevice?perPage=500');
 if (request.getStatus() !== 200) {
-  throw 'Failed to list channel utilization: status ' + request.getStatus();
+  throw 'Failed to list radio statuses: status ' + request.getStatus();
 }
 
-var devices = JSON.parse(response);
+var result = JSON.parse(response);
+var seen = {};
 var data = [];
-devices.forEach(function (dev) {
-  (dev.byBand || []).forEach(function (band) {
+(result.items || []).forEach(function (device) {
+  (device.basicServiceSets || []).forEach(function (bss) {
+    if (!bss.radio) {
+      return;
+    }
+    var key = device.serial + ':' + bss.radio.band + ':' + bss.radio.index;
+    if (seen[key]) {
+      return;
+    }
+    seen[key] = true;
     data.push({
-      '{#SERIAL}': dev.serial,
-      '{#AP_NAME}': dev.name || dev.serial,
-      '{#RADIO_BAND}': band.band
+      '{#SERIAL}': device.serial,
+      '{#AP_NAME}': device.name || device.serial,
+      '{#RADIO_BAND}': bss.radio.band,
+      '{#RADIO_INDEX}': bss.radio.index
     });
   });
 });
 
 return JSON.stringify({ data: data });
+"""
+).strip()
+
+# Per-AP raw status pull, aggregated by (band, index) since multiple SSIDs
+# share the same physical radio and report identical channel/width/power —
+# only 'broadcasting' varies per SSID, so it's OR-reduced across SSIDs on
+# that radio here rather than picking an arbitrary single SSID's value.
+RADIO_STATUS_SCRIPT_BODY = (
+    r"""
+var params = JSON.parse(value);
+"""
+    + "\n"
+    + _HTTP_SETUP
+    + r"""
+
+var error_msg = '';
+var result = {};
+
+try {
+  var response = request.get(url + 'organizations/' + encodeURIComponent(params.orgid) +
+    '/wireless/ssids/statuses/byDevice?serials%5B%5D=' + encodeURIComponent(params.serial));
+  if (request.getStatus() !== 200) {
+    throw 'Failed to get radio status: status ' + request.getStatus();
+  }
+  var parsed = JSON.parse(response);
+  var device = (parsed.items || [])[0];
+  var radios = {};
+  if (device) {
+    (device.basicServiceSets || []).forEach(function (bss) {
+      if (!bss.radio) {
+        return;
+      }
+      var key = bss.radio.band + '_' + bss.radio.index;
+      if (!radios[key]) {
+        radios[key] = {
+          channel: bss.radio.channel,
+          channelWidth: bss.radio.channelWidth,
+          power: bss.radio.power,
+          broadcasting: false
+        };
+      }
+      if (bss.radio.isBroadcasting) {
+        radios[key].broadcasting = true;
+      }
+    });
+  }
+  result = { radios: radios };
+} catch (error) {
+  error_msg = error.toString();
+}
+
+return JSON.stringify({
+  'result': result,
+  'error': error_msg
+});
 """
 ).strip()
 

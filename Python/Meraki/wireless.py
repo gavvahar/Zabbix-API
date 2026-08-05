@@ -21,6 +21,7 @@ from scripts import (
     NETWORK_CONNECTIONSTATS_SCRIPT_BODY,
     SSID_CONNECTIONSTATS_SCRIPT_BODY,
     RADIO_UTILIZATION_SCRIPT_BODY,
+    RADIO_STATUS_SCRIPT_BODY,
 )
 
 
@@ -76,13 +77,25 @@ def create_itemprototype(templateid, ruleid, name, key, script_body, parameters,
     return result["itemids"][0]
 
 
-def create_dependent_itemprototype(templateid, ruleid, master_itemid, name, key, jsonpath, value_type=3, units=None, tags=None):
+def create_dependent_itemprototype(templateid, ruleid, master_itemid, name, key, jsonpath, value_type=3, units=None, tags=None, bool_to_decimal=False):
     """Create a dependent item prototype that extracts jsonpath from the master item prototype's JSON, or return its existing id."""
     found = api_call("itemprototype.get", {"hostids": [templateid], "filter": {"key_": key}})
     if found:
         return found[0]["itemid"]
 
     print(f"Creating dependent item prototype '{name}'")
+    preprocessing = [
+        {
+            "type": 12,  # JSONPath
+            "params": jsonpath,
+            "error_handler": 1,  # Discard value
+            "error_handler_params": "",
+        }
+    ]
+    if bool_to_decimal:
+        # JSONPath alone hands Zabbix a literal true/false, which a numeric-typed
+        # item rejects — this second step converts it to 1/0.
+        preprocessing.append({"type": 6, "params": "", "error_handler": 0, "error_handler_params": ""})
     payload = {
         "hostid": templateid,
         "ruleid": ruleid,
@@ -92,14 +105,7 @@ def create_dependent_itemprototype(templateid, ruleid, master_itemid, name, key,
         "master_itemid": master_itemid,
         "value_type": value_type,
         "history": "31d",
-        "preprocessing": [
-            {
-                "type": 12,  # JSONPath
-                "params": jsonpath,
-                "error_handler": 1,  # Discard value
-                "error_handler_params": "",
-            }
-        ],
+        "preprocessing": preprocessing,
     }
     if units:
         payload["units"] = units
@@ -345,8 +351,12 @@ def create_wireless_health(recreate=False):
     create_itemprototype(
         templateid,
         radio_ruleid,
-        "Channel utilization: {#AP_NAME} ({#RADIO_BAND}GHz)",
-        "meraki.radio.utilization[{#SERIAL},{#RADIO_BAND}]",
+        # Meraki's utilization endpoint aggregates per band only, with no way to
+        # distinguish APs that run two physical radios on the same band (5GHz is
+        # common) — {#RADIO_INDEX} is only here to keep the item key unique per
+        # discovered radio; both same-band radios legitimately report the same value.
+        "Channel utilization: {#AP_NAME} ({#RADIO_BAND}GHz, radio {#RADIO_INDEX})",
+        "meraki.radio.utilization[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]",
         RADIO_UTILIZATION_SCRIPT_BODY,
         [
             {"name": "band", "value": "{#RADIO_BAND}"},
@@ -359,6 +369,67 @@ def create_wireless_health(recreate=False):
         value_type=0,
         units="%",  # Numeric float
         tags=radio_tags,
+    )
+    radio_status_itemid = create_itemprototype(
+        templateid,
+        radio_ruleid,
+        "Radio status: {#AP_NAME} ({#RADIO_BAND}GHz, radio {#RADIO_INDEX})",
+        "meraki.radio.status[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]",
+        RADIO_STATUS_SCRIPT_BODY,
+        [
+            {"name": "httpproxy", "value": "{$MERAKI.HTTP_PROXY}"},
+            {"name": "orgid", "value": "{$MERAKI.ORG.ID}"},
+            {"name": "serial", "value": "{#SERIAL}"},
+            {"name": "token", "value": "{$MERAKI.TOKEN}"},
+            {"name": "url", "value": "{$MERAKI.API.URL}"},
+        ],
+        value_type=4,  # Text (raw JSON, mirrored by dependent items below)
+        history="0",  # Do not store
+        tags=radio_tags,
+    )
+    radio_key = "{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}"
+    radio_jsonkey = "{#RADIO_BAND}_{#RADIO_INDEX}"
+    create_dependent_itemprototype(
+        templateid,
+        radio_ruleid,
+        radio_status_itemid,
+        "Channel: {#AP_NAME} ({#RADIO_BAND}GHz, radio {#RADIO_INDEX})",
+        f"meraki.radio.channel[{radio_key}]",
+        f"$.result.radios['{radio_jsonkey}'].channel",
+        tags=radio_tags,
+    )
+    create_dependent_itemprototype(
+        templateid,
+        radio_ruleid,
+        radio_status_itemid,
+        "Channel width: {#AP_NAME} ({#RADIO_BAND}GHz, radio {#RADIO_INDEX})",
+        f"meraki.radio.channelwidth[{radio_key}]",
+        f"$.result.radios['{radio_jsonkey}'].channelWidth",
+        units="MHz",
+        tags=radio_tags,
+    )
+    create_dependent_itemprototype(
+        templateid,
+        radio_ruleid,
+        radio_status_itemid,
+        "TX power: {#AP_NAME} ({#RADIO_BAND}GHz, radio {#RADIO_INDEX})",
+        f"meraki.radio.power[{radio_key}]",
+        f"$.result.radios['{radio_jsonkey}'].power",
+        units="dBm",
+        tags=radio_tags,
+    )
+    # Serves both "Radio Enabled" and "SSID Broadcast Status" — Meraki's API only
+    # exposes one signal here (per-SSID isBroadcasting, OR-reduced per radio in
+    # RADIO_STATUS_SCRIPT_BODY), not two independently meaningful ones.
+    create_dependent_itemprototype(
+        templateid,
+        radio_ruleid,
+        radio_status_itemid,
+        "Broadcasting: {#AP_NAME} ({#RADIO_BAND}GHz, radio {#RADIO_INDEX})",
+        f"meraki.radio.broadcasting[{radio_key}]",
+        f"$.result.radios['{radio_jsonkey}'].broadcasting",
+        tags=radio_tags,
+        bool_to_decimal=True,
     )
 
     print(f"Done. '{DASHBOARD_CLONE_TEMPLATE}' is ready (templateid {templateid}).")
