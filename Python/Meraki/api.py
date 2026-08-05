@@ -38,6 +38,28 @@ def get_host_id(name):
     return None
 
 
+def rewrite_host_refs(obj, source_name, clone_name):
+    """Recursively replace literal occurrences of source_name with clone_name in
+    every string value within a decoded configuration export subtree, in place.
+
+    Zabbix embeds the template's own technical name as plain text inside trigger
+    (and trigger prototype) expressions — e.g. "/{HOST}/{KEY}" — and inside
+    dashboard widget graph references, not just in the template's own "template"/
+    "name" fields. Left unrewritten, those references still resolve to the
+    source template on import, so Zabbix matches new trigger prototypes against
+    objects that already exist there and rejects them as duplicates.
+    """
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if isinstance(v, str):
+                obj[k] = v.replace(source_name, clone_name)
+            else:
+                rewrite_host_refs(v, source_name, clone_name)
+    elif isinstance(obj, list):
+        for item in obj:
+            rewrite_host_refs(item, source_name, clone_name)
+
+
 def reset_uuids(obj):
     """Recursively replace 'uuid' values with freshly generated ones within a
     decoded configuration export subtree, in place, so Zabbix treats the
@@ -71,9 +93,7 @@ def clone_template(source_name, clone_name):
     src_id = get_template_id(source_name)
     exported = api_call("configuration.export", {"format": "json", "options": {"templates": [src_id]}})
     data = json.loads(exported)
-    tmpl = data["zabbix_export"]["templates"][0]
-    tmpl["template"] = clone_name
-    tmpl["name"] = clone_name
+    rewrite_host_refs(data["zabbix_export"]["templates"], source_name, clone_name)
     reset_uuids(data["zabbix_export"]["templates"])
 
     rules = {
