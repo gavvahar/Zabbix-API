@@ -24,6 +24,8 @@ from scripts import (
     NETWORK_CLIENTUSAGE_SCRIPT_BODY,
     RADIO_UTILIZATION_SCRIPT_BODY,
     RADIO_STATUS_SCRIPT_BODY,
+    CLIENTGROUPS_DISCOVERY_SCRIPT_BODY,
+    CLIENTGROUP_DETAIL_SCRIPT_BODY,
 )
 
 
@@ -521,6 +523,55 @@ def create_wireless_health(recreate=False):
         f"$.result.radios['{radio_jsonkey}'].ssids",
         value_type=4,  # Text — a radio can broadcast multiple SSIDs at once
         tags=radio_tags,
+    )
+
+    # --- Client Groups Discovery: per-network group policies (bandwidth limits) ---
+    clientgroup_tags = [{"tag": "component", "value": "clientgroup"}]
+    clientgroup_ruleid = create_discovery_rule(
+        templateid,
+        "Client Groups Discovery",
+        "meraki.lld.clientgroups",
+        CLIENTGROUPS_DISCOVERY_SCRIPT_BODY,
+        api_params,
+    )
+    clientgroup_detail_itemid = create_itemprototype(
+        templateid,
+        clientgroup_ruleid,
+        "Client group policy: {#GROUP_POLICY_NAME} on {#NETWORK_NAME}",
+        "meraki.clientgroup.detail[{#NETWORK_ID},{#GROUP_POLICY_ID}]",
+        CLIENTGROUP_DETAIL_SCRIPT_BODY,
+        [
+            {"name": "httpproxy", "value": "{$MERAKI.HTTP_PROXY}"},
+            {"name": "networkid", "value": "{#NETWORK_ID}"},
+            {"name": "grouppolicyid", "value": "{#GROUP_POLICY_ID}"},
+            {"name": "token", "value": "{$MERAKI.TOKEN}"},
+            {"name": "url", "value": "{$MERAKI.API.URL}"},
+        ],
+        value_type=4,  # Text (raw JSON, mirrored by dependent items below)
+        history="0",  # Do not store
+        tags=clientgroup_tags,
+    )
+    create_dependent_itemprototype(
+        templateid,
+        clientgroup_ruleid,
+        clientgroup_detail_itemid,
+        "Bandwidth limit up: {#GROUP_POLICY_NAME} on {#NETWORK_NAME}",
+        "meraki.clientgroup.bandwidth.up[{#NETWORK_ID},{#GROUP_POLICY_ID}]",
+        "$.result.limitUpKbps",
+        value_type=0,  # Numeric float
+        units="Kbps",
+        tags=clientgroup_tags,
+    )
+    create_dependent_itemprototype(
+        templateid,
+        clientgroup_ruleid,
+        clientgroup_detail_itemid,
+        "Bandwidth limit down: {#GROUP_POLICY_NAME} on {#NETWORK_NAME}",
+        "meraki.clientgroup.bandwidth.down[{#NETWORK_ID},{#GROUP_POLICY_ID}]",
+        "$.result.limitDownKbps",
+        value_type=0,  # Numeric float
+        units="Kbps",
+        tags=clientgroup_tags,
     )
 
     print(f"Done. '{DASHBOARD_CLONE_TEMPLATE}' is ready (templateid {templateid}).")

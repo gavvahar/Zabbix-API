@@ -61,7 +61,7 @@ def create_device_status_item(templateid):
     return result["itemids"][0]
 
 
-def create_text_dependent_item(templateid, master_itemid, name, key, jsonpath, discard_on_fail=True, value_type=4):
+def create_text_dependent_item(templateid, master_itemid, name, key, jsonpath, discard_on_fail=True, value_type=4, units=None):
     """Create a dependent item that extracts jsonpath from the master item's JSON, or return its existing id."""
     found = api_call("item.get", {"hostids": [templateid], "filter": {"key_": key}})
     if found:
@@ -76,19 +76,19 @@ def create_text_dependent_item(templateid, master_itemid, name, key, jsonpath, d
             "error_handler_params": "",
         }
     ]
-    result = api_call(
-        "item.create",
-        {
-            "hostid": templateid,
-            "name": name,
-            "key_": key,
-            "type": 18,  # Dependent item
-            "master_itemid": master_itemid,
-            "value_type": value_type,  # 4 = Text
-            "history": "31d",
-            "preprocessing": preprocessing,
-        },
-    )
+    payload = {
+        "hostid": templateid,
+        "name": name,
+        "key_": key,
+        "type": 18,  # Dependent item
+        "master_itemid": master_itemid,
+        "value_type": value_type,  # 4 = Text
+        "history": "31d",
+        "preprocessing": preprocessing,
+    }
+    if units:
+        payload["units"] = units
+    result = api_call("item.create", payload)
     return result["itemids"][0]
 
 
@@ -235,6 +235,30 @@ def create_ap_health(templateid):
         "Organization name",
         "meraki.device.organizationname",
         "$.result.organizationName",
+    )
+    create_text_dependent_item(
+        templateid,
+        deviceinfo_itemid,
+        "AP tags",
+        "meraki.device.tags",
+        "$.result.tags",
+    )
+    create_text_dependent_item(
+        templateid,
+        deviceinfo_itemid,
+        "API response time",
+        "meraki.device.info.responsetime",
+        "$.result.apiResponseTimeMs",
+        value_type=0,  # Numeric float
+        units="ms",
+    )
+    create_text_dependent_item(
+        templateid,
+        deviceinfo_itemid,
+        "Last successful poll",
+        "meraki.device.info.lastsuccess",
+        "$.result.lastSuccessfulPollUnix",
+        value_type=3,  # Numeric unsigned (unix timestamp)
     )
     create_text_dependent_item(
         templateid,

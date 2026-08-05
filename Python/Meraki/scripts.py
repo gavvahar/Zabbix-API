@@ -176,7 +176,9 @@ var result = {};
 try {
   var statusUrl = params.url + 'organizations/' + encodeURIComponent(params.orgid) +
     '/devices/statuses?serials%5B%5D=' + encodeURIComponent(params.serial);
+  var t0 = Date.now();
   var statusResp = request.get(statusUrl);
+  var responseTimeMs = Date.now() - t0;
   if (request.getStatus() !== 200) {
     throw 'Failed to get device status: status ' + request.getStatus();
   }
@@ -205,7 +207,10 @@ try {
     lastReportedAtUnix: device.lastReportedAt ? Math.floor(new Date(device.lastReportedAt).getTime() / 1000) : 0,
     productType: device.productType || '',
     networkName: networkName,
-    organizationName: orgName
+    organizationName: orgName,
+    tags: (device.tags || []).join(', '),
+    apiResponseTimeMs: responseTimeMs,
+    lastSuccessfulPollUnix: Math.floor(Date.now() / 1000)
   };
 } catch (error) {
   error_msg = error.toString();
@@ -354,6 +359,79 @@ var data = [];
 });
 
 return JSON.stringify({ data: data });
+"""
+).strip()
+
+CLIENTGROUPS_DISCOVERY_SCRIPT_BODY = (
+    r"""
+var params = JSON.parse(value);
+"""
+    + "\n"
+    + _HTTP_SETUP
+    + r"""
+
+var netResponse = request.get(url + 'organizations/' + encodeURIComponent(params.orgid) + '/networks');
+if (request.getStatus() !== 200) {
+  throw 'Failed to list networks: status ' + request.getStatus();
+}
+var networks = JSON.parse(netResponse);
+
+var data = [];
+networks.forEach(function (net) {
+  var gpResponse = request.get(url + 'networks/' + encodeURIComponent(net.id) + '/groupPolicies');
+  if (request.getStatus() !== 200) {
+    return; // network doesn't support group policies (e.g. no eligible product) — skip it
+  }
+  var policies = JSON.parse(gpResponse);
+  policies.forEach(function (gp) {
+    data.push({
+      '{#NETWORK_ID}': net.id,
+      '{#NETWORK_NAME}': net.name,
+      '{#GROUP_POLICY_ID}': gp.groupPolicyId,
+      '{#GROUP_POLICY_NAME}': gp.name
+    });
+  });
+});
+
+return JSON.stringify({ data: data });
+"""
+).strip()
+
+# Field names (bandwidth.bandwidthLimits.limitUp/limitDown) are per Meraki's
+# official docs — NOT verified against a live example, since no group policy
+# currently exists in this org to test against. Adjust if these turn out to
+# be nested differently once a real policy exists.
+CLIENTGROUP_DETAIL_SCRIPT_BODY = (
+    r"""
+var params = JSON.parse(value);
+"""
+    + "\n"
+    + _HTTP_SETUP
+    + r"""
+
+var error_msg = '';
+var result = {};
+
+try {
+  var response = request.get(url + 'networks/' + encodeURIComponent(params.networkid) +
+    '/groupPolicies/' + encodeURIComponent(params.grouppolicyid));
+  if (request.getStatus() !== 200) {
+    throw 'Failed to get group policy: status ' + request.getStatus();
+  }
+  var gp = JSON.parse(response);
+  var limits = (gp.bandwidth && gp.bandwidth.bandwidthLimits) ? gp.bandwidth.bandwidthLimits : {};
+  result = {
+    limitUpKbps: limits.limitUp != null ? limits.limitUp : 0,
+    limitDownKbps: limits.limitDown != null ? limits.limitDown : 0
+  };
+} catch (error) {
+  error_msg = error.toString();
+}
+
+return JSON.stringify({
+  'result': result,
+  'error': error_msg
+});
 """
 ).strip()
 
