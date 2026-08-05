@@ -213,8 +213,7 @@ def create_wireless_health(recreate=False):
         # resolved once at save time) — a template-name reference fails with
         # "item does not exist" since templates aren't hosts. "//key" (empty
         # host) is Zabbix's documented shorthand for "this same host".
-        f"(last(//{clientcount_key})-avg(//{clientcount_key},1h))"
-        f"/(avg(//{clientcount_key},1h)+0.001)*100",
+        f"(last(//{clientcount_key})-avg(//{clientcount_key},1h))/(avg(//{clientcount_key},1h)+0.001)*100",
         units="%",
         tags=network_tags,
     )
