@@ -431,6 +431,16 @@ def create_wireless_health(recreate=False):
         tags=radio_tags,
         bool_to_decimal=True,
     )
+    create_dependent_itemprototype(
+        templateid,
+        radio_ruleid,
+        radio_status_itemid,
+        "SSIDs broadcasting: {#AP_NAME} ({#RADIO_BAND}GHz, radio {#RADIO_INDEX})",
+        f"meraki.radio.ssids[{radio_key}]",
+        f"$.result.radios['{radio_jsonkey}'].ssids",
+        value_type=4,  # Text — a radio can broadcast multiple SSIDs at once
+        tags=radio_tags,
+    )
 
     print(f"Done. '{DASHBOARD_CLONE_TEMPLATE}' is ready (templateid {templateid}).")
     print("This only builds the template — it does not touch any live host.")

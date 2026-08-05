@@ -320,14 +320,22 @@ try {
           channel: bss.radio.channel,
           channelWidth: bss.radio.channelWidth,
           power: bss.radio.power,
-          broadcasting: false
+          broadcasting: false,
+          ssidNames: []
         };
       }
       if (bss.radio.isBroadcasting) {
         radios[key].broadcasting = true;
+        if (bss.ssid && bss.ssid.name) {
+          radios[key].ssidNames.push(bss.ssid.name);
+        }
       }
     });
   }
+  Object.keys(radios).forEach(function (key) {
+    radios[key].ssids = radios[key].ssidNames.join(', ');
+    delete radios[key].ssidNames;
+  });
   result = { radios: radios };
 } catch (error) {
   error_msg = error.toString();
