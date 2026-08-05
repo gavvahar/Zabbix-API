@@ -12,7 +12,7 @@ loss item — since every discovered host already carries {$SERIAL}.
 
 from api import api_call, get_template_id
 from config import CLONE_TEMPLATE
-from scripts import DEVICE_STATUS_SCRIPT_BODY
+from scripts import DEVICE_STATUS_SCRIPT_BODY, DEVICE_INFO_SCRIPT_BODY
 
 # The official "Cisco Meraki device by HTTP" template already ships its own
 # device status poller + error mirror under these keys. When a clone still
@@ -61,8 +61,8 @@ def create_device_status_item(templateid):
     return result["itemids"][0]
 
 
-def create_text_dependent_item(templateid, master_itemid, name, key, jsonpath, discard_on_fail=True):
-    """Create a text dependent item that extracts jsonpath from the master item's JSON, or return its existing id."""
+def create_text_dependent_item(templateid, master_itemid, name, key, jsonpath, discard_on_fail=True, value_type=4):
+    """Create a dependent item that extracts jsonpath from the master item's JSON, or return its existing id."""
     found = api_call("item.get", {"hostids": [templateid], "filter": {"key_": key}})
     if found:
         return found[0]["itemid"]
@@ -84,9 +84,40 @@ def create_text_dependent_item(templateid, master_itemid, name, key, jsonpath, d
             "key_": key,
             "type": 18,  # Dependent item
             "master_itemid": master_itemid,
-            "value_type": 4,  # Text
+            "value_type": value_type,  # 4 = Text
             "history": "31d",
             "preprocessing": preprocessing,
+        },
+    )
+    return result["itemids"][0]
+
+
+def create_device_info_item(templateid):
+    """Create the device info Script item on the template, or return its existing id."""
+    found = api_call("item.get", {"hostids": [templateid], "filter": {"key_": "meraki.get.deviceinfo"}})
+    if found:
+        return found[0]["itemid"]
+
+    print("Creating 'Get device info' script item")
+    result = api_call(
+        "item.create",
+        {
+            "hostid": templateid,
+            "name": "Get device info",
+            "key_": "meraki.get.deviceinfo",
+            "type": 21,  # Script
+            "value_type": 4,  # Text
+            "delay": "{$MERAKI.DEVICESTATUS.INTERVAL}",
+            "timeout": "{$MERAKI.DATA.TIMEOUT}",
+            "history": "0",  # Do not store — raw JSON, mirrored by dependent items below
+            "params": DEVICE_INFO_SCRIPT_BODY,
+            "parameters": [
+                {"name": "httpproxy", "value": "{$MERAKI.HTTP_PROXY}"},
+                {"name": "orgid", "value": "{$MERAKI.ORG.ID}"},
+                {"name": "serial", "value": "{$SERIAL}"},
+                {"name": "token", "value": "{$MERAKI.TOKEN}"},
+                {"name": "url", "value": "{$MERAKI.API.URL}"},
+            ],
         },
     )
     return result["itemids"][0]
@@ -168,7 +199,56 @@ def create_ap_health(templateid):
         discard_on_fail=False,
     )
 
-    api_failure_conditions = [f"length(last(/{CLONE_TEMPLATE}/meraki.get.packetloss.error))>0"]
+    deviceinfo_itemid = create_device_info_item(templateid)
+    create_text_dependent_item(
+        templateid,
+        deviceinfo_itemid,
+        "Public IP",
+        "meraki.device.publicip",
+        "$.result.publicIp",
+    )
+    create_text_dependent_item(
+        templateid,
+        deviceinfo_itemid,
+        "Last seen",
+        "meraki.device.lastseen",
+        "$.result.lastReportedAtUnix",
+        value_type=3,  # Numeric unsigned (unix timestamp)
+    )
+    create_text_dependent_item(
+        templateid,
+        deviceinfo_itemid,
+        "Product type",
+        "meraki.device.producttype",
+        "$.result.productType",
+    )
+    create_text_dependent_item(
+        templateid,
+        deviceinfo_itemid,
+        "Network name",
+        "meraki.device.networkname",
+        "$.result.networkName",
+    )
+    create_text_dependent_item(
+        templateid,
+        deviceinfo_itemid,
+        "Organization name",
+        "meraki.device.organizationname",
+        "$.result.organizationName",
+    )
+    create_text_dependent_item(
+        templateid,
+        deviceinfo_itemid,
+        "Device info: API error",
+        "meraki.device.info.error",
+        "$.error",
+        discard_on_fail=False,
+    )
+
+    api_failure_conditions = [
+        f"length(last(/{CLONE_TEMPLATE}/meraki.get.packetloss.error))>0",
+        f"length(last(/{CLONE_TEMPLATE}/meraki.device.info.error))>0",
+    ]
     if status_error_key:
         api_failure_conditions.insert(0, f"length(last(/{CLONE_TEMPLATE}/{status_error_key}))>0")
 
