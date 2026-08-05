@@ -50,6 +50,7 @@ DASHBOARD_MACROS = {
     "{$MERAKI.CLIENTCOUNT.HIGH}": "50",
     "{$MERAKI.AUTHFAIL.HIGH}": "20",
     "{$MERAKI.AUTHFAIL.SSID.HIGH}": "10",
+    "{$MERAKI.CLIENTCOUNT.TREND.THRESHOLD}": "50",  # % swing vs 1h avg that counts as abnormal
     "{$MERAKI.ORG.ID}": MERAKI_ORG_ID,
 }
 

@@ -119,6 +119,33 @@ def create_dependent_itemprototype(templateid, ruleid, master_itemid, name, key,
     return result["itemids"][0]
 
 
+def create_calculated_itemprototype(templateid, ruleid, name, key, formula, value_type=0, units=None, tags=None):
+    """Create a calculated item prototype (computed by Zabbix from other items' own stored
+    history — no external API call), or return its existing id."""
+    found = api_call("itemprototype.get", {"hostids": [templateid], "filter": {"key_": key}})
+    if found:
+        return found[0]["itemid"]
+
+    print(f"Creating calculated item prototype '{name}'")
+    payload = {
+        "hostid": templateid,
+        "ruleid": ruleid,
+        "name": name,
+        "key_": key,
+        "type": 15,  # Calculated
+        "value_type": value_type,  # 0 = Numeric float
+        "delay": "{$MERAKI.LLD.INTERVAL}",
+        "params": formula,
+        "history": "31d",
+    }
+    if units:
+        payload["units"] = units
+    if tags:
+        payload["tags"] = tags
+    result = api_call("itemprototype.create", payload)
+    return result["itemids"][0]
+
+
 def create_trigger_prototype(templateid, description, expression, priority, tag_value="performance"):
     """Create a trigger prototype, or return its existing id."""
     found = api_call("triggerprototype.get", {"hostids": [templateid], "filter": {"description": description}})
@@ -175,6 +202,27 @@ def create_wireless_health(recreate=False):
             {"name": "url", "value": "{$MERAKI.API.URL}"},
         ],
         tags=network_tags,
+    )
+    clientcount_trend_key = "meraki.network.clientcount.trend[{#NETWORK_ID}]"
+    create_calculated_itemprototype(
+        templateid,
+        network_ruleid,
+        "Client count trend (vs 1h avg): {#NETWORK_NAME}",
+        clientcount_trend_key,
+        # Calculated items re-resolve /host/key at every poll (unlike triggers,
+        # resolved once at save time) — a template-name reference fails with
+        # "item does not exist" since templates aren't hosts. "//key" (empty
+        # host) is Zabbix's documented shorthand for "this same host".
+        f"(last(//{clientcount_key})-avg(//{clientcount_key},1h))"
+        f"/(avg(//{clientcount_key},1h)+0.001)*100",
+        units="%",
+        tags=network_tags,
+    )
+    create_trigger_prototype(
+        templateid,
+        "Meraki: Client count trend abnormal on {#NETWORK_NAME}",
+        f"abs(last(/{DASHBOARD_CLONE_TEMPLATE}/{clientcount_trend_key}))>{{$MERAKI.CLIENTCOUNT.TREND.THRESHOLD}}",
+        2,  # Warning
     )
     net_authfail_key = "meraki.network.authfailures[{#NETWORK_ID}]"
     create_itemprototype(
