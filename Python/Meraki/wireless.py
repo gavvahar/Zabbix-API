@@ -17,6 +17,9 @@ from scripts import (
     NETWORK_CLIENTCOUNT_SCRIPT_BODY,
     NETWORK_AUTHFAILURES_SCRIPT_BODY,
     SSID_AUTHFAILURES_SCRIPT_BODY,
+    SSID_CLIENTCOUNT_SCRIPT_BODY,
+    NETWORK_CONNECTIONSTATS_SCRIPT_BODY,
+    SSID_CONNECTIONSTATS_SCRIPT_BODY,
     RADIO_UTILIZATION_SCRIPT_BODY,
 )
 
@@ -45,7 +48,7 @@ def create_discovery_rule(templateid, name, key, script_body, parameters, lifeti
     return result["itemids"][0]
 
 
-def create_itemprototype(templateid, ruleid, name, key, script_body, parameters, value_type=3, units=None):
+def create_itemprototype(templateid, ruleid, name, key, script_body, parameters, value_type=3, units=None, history="31d"):
     """Create an item prototype under the discovery rule, or return its existing id."""
     found = api_call("itemprototype.get", {"hostids": [templateid], "filter": {"key_": key}})
     if found:
@@ -61,9 +64,40 @@ def create_itemprototype(templateid, ruleid, name, key, script_body, parameters,
         "value_type": value_type,  # 3 = Numeric unsigned
         "delay": "{$MERAKI.LLD.INTERVAL}",
         "timeout": "{$MERAKI.DATA.TIMEOUT}",
-        "history": "31d",
+        "history": history,
         "params": script_body,
         "parameters": parameters,
+    }
+    if units:
+        payload["units"] = units
+    result = api_call("itemprototype.create", payload)
+    return result["itemids"][0]
+
+
+def create_dependent_itemprototype(templateid, ruleid, master_itemid, name, key, jsonpath, value_type=3, units=None):
+    """Create a dependent item prototype that extracts jsonpath from the master item prototype's JSON, or return its existing id."""
+    found = api_call("itemprototype.get", {"hostids": [templateid], "filter": {"key_": key}})
+    if found:
+        return found[0]["itemid"]
+
+    print(f"Creating dependent item prototype '{name}'")
+    payload = {
+        "hostid": templateid,
+        "ruleid": ruleid,
+        "name": name,
+        "key_": key,
+        "type": 18,  # Dependent item
+        "master_itemid": master_itemid,
+        "value_type": value_type,
+        "history": "31d",
+        "preprocessing": [
+            {
+                "type": 12,  # JSONPath
+                "params": jsonpath,
+                "error_handler": 1,  # Discard value
+                "error_handler_params": "",
+            }
+        ],
     }
     if units:
         payload["units"] = units
@@ -138,6 +172,47 @@ def create_wireless_health():
             {"name": "url", "value": "{$MERAKI.API.URL}"},
         ],
     )
+    net_connstats_itemid = create_itemprototype(
+        templateid,
+        network_ruleid,
+        "Connection stats: {#NETWORK_NAME}",
+        "meraki.network.connectionstats[{#NETWORK_ID}]",
+        NETWORK_CONNECTIONSTATS_SCRIPT_BODY,
+        [
+            {"name": "httpproxy", "value": "{$MERAKI.HTTP_PROXY}"},
+            {"name": "networkid", "value": "{#NETWORK_ID}"},
+            {"name": "token", "value": "{$MERAKI.TOKEN}"},
+            {"name": "url", "value": "{$MERAKI.API.URL}"},
+        ],
+        value_type=4,  # Text (raw JSON, mirrored by dependent items below)
+        history="0",  # Do not store
+    )
+    create_dependent_itemprototype(
+        templateid,
+        network_ruleid,
+        net_connstats_itemid,
+        "DHCP failures (1h): {#NETWORK_NAME}",
+        "meraki.network.dhcpfailures[{#NETWORK_ID}]",
+        "$.result.dhcp",
+    )
+    create_dependent_itemprototype(
+        templateid,
+        network_ruleid,
+        net_connstats_itemid,
+        "DNS failures (1h): {#NETWORK_NAME}",
+        "meraki.network.dnsfailures[{#NETWORK_ID}]",
+        "$.result.dns",
+    )
+    create_dependent_itemprototype(
+        templateid,
+        network_ruleid,
+        net_connstats_itemid,
+        "Connection success rate (1h): {#NETWORK_NAME}",
+        "meraki.network.connections.successrate[{#NETWORK_ID}]",
+        "$.result.successRatePct",
+        value_type=0,  # Numeric float
+        units="%",
+    )
     create_trigger_prototype(
         templateid,
         "Meraki: High client count on {#NETWORK_NAME}",
@@ -182,6 +257,62 @@ def create_wireless_health():
         "Meraki: Authentication failure rate high on {#SSID_NAME} ({#NETWORK_NAME})",
         f"last(/{DASHBOARD_CLONE_TEMPLATE}/{ssid_authfail_key})>{{$MERAKI.AUTHFAIL.SSID.HIGH}}",
         2,  # Warning
+    )
+    create_itemprototype(
+        templateid,
+        ssid_ruleid,
+        "Connected clients: {#SSID_NAME} on {#NETWORK_NAME}",
+        "meraki.ssid.clientcount[{#NETWORK_ID},{#SSID_NUMBER}]",
+        SSID_CLIENTCOUNT_SCRIPT_BODY,
+        [
+            {"name": "httpproxy", "value": "{$MERAKI.HTTP_PROXY}"},
+            {"name": "networkid", "value": "{#NETWORK_ID}"},
+            {"name": "ssidname", "value": "{#SSID_NAME}"},
+            {"name": "token", "value": "{$MERAKI.TOKEN}"},
+            {"name": "url", "value": "{$MERAKI.API.URL}"},
+        ],
+    )
+    ssid_connstats_itemid = create_itemprototype(
+        templateid,
+        ssid_ruleid,
+        "Connection stats: {#SSID_NAME} on {#NETWORK_NAME}",
+        "meraki.ssid.connectionstats[{#NETWORK_ID},{#SSID_NUMBER}]",
+        SSID_CONNECTIONSTATS_SCRIPT_BODY,
+        [
+            {"name": "httpproxy", "value": "{$MERAKI.HTTP_PROXY}"},
+            {"name": "networkid", "value": "{#NETWORK_ID}"},
+            {"name": "ssidnumber", "value": "{#SSID_NUMBER}"},
+            {"name": "token", "value": "{$MERAKI.TOKEN}"},
+            {"name": "url", "value": "{$MERAKI.API.URL}"},
+        ],
+        value_type=4,  # Text (raw JSON, mirrored by dependent items below)
+        history="0",  # Do not store
+    )
+    create_dependent_itemprototype(
+        templateid,
+        ssid_ruleid,
+        ssid_connstats_itemid,
+        "DHCP failures (1h): {#SSID_NAME} on {#NETWORK_NAME}",
+        "meraki.ssid.dhcpfailures[{#NETWORK_ID},{#SSID_NUMBER}]",
+        "$.result.dhcp",
+    )
+    create_dependent_itemprototype(
+        templateid,
+        ssid_ruleid,
+        ssid_connstats_itemid,
+        "DNS failures (1h): {#SSID_NAME} on {#NETWORK_NAME}",
+        "meraki.ssid.dnsfailures[{#NETWORK_ID},{#SSID_NUMBER}]",
+        "$.result.dns",
+    )
+    create_dependent_itemprototype(
+        templateid,
+        ssid_ruleid,
+        ssid_connstats_itemid,
+        "Connection success rate (1h): {#SSID_NAME} on {#NETWORK_NAME}",
+        "meraki.ssid.connections.successrate[{#NETWORK_ID},{#SSID_NUMBER}]",
+        "$.result.successRatePct",
+        value_type=0,  # Numeric float
+        units="%",
     )
 
     # --- Radio Discovery: per-AP, per-band channel utilization (data only — not in the trigger list) ---

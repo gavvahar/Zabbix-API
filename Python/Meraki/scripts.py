@@ -314,6 +314,114 @@ return events.filter(function (e) { return e.type === 'auth'; }).length;
 """
 ).strip()
 
+SSID_CLIENTCOUNT_SCRIPT_BODY = (
+    r"""
+var params = JSON.parse(value);
+"""
+    + "\n"
+    + _HTTP_SETUP
+    + r"""
+
+var response = request.get(url + 'networks/' + encodeURIComponent(params.networkid) + '/clients?timespan=300');
+if (request.getStatus() !== 200) {
+  throw 'Failed to list clients: status ' + request.getStatus();
+}
+
+var clients = JSON.parse(response);
+var count = 0;
+clients.forEach(function (c) {
+  if (c.ssid === params.ssidname) {
+    count++;
+  }
+});
+return count;
+"""
+).strip()
+
+# connectionStats buckets (assoc/auth/dhcp/dns) are each a count of clients that
+# FAILED at that funnel step; 'success' is clients that completed the whole
+# funnel. successRatePct is computed here (rather than via item preprocessing)
+# so only the already-used JSONPath preprocessing type is needed downstream.
+NETWORK_CONNECTIONSTATS_SCRIPT_BODY = (
+    r"""
+var params = JSON.parse(value);
+"""
+    + "\n"
+    + _HTTP_SETUP
+    + r"""
+
+var error_msg = '';
+var result = {};
+
+try {
+  var response = request.get(url + 'networks/' + encodeURIComponent(params.networkid) +
+    '/wireless/connectionStats?timespan=3600');
+  if (request.getStatus() !== 200) {
+    throw 'Failed to get connection stats: status ' + request.getStatus();
+  }
+  var stats = JSON.parse(response);
+  var assoc = stats.assoc || 0;
+  var auth = stats.auth || 0;
+  var dhcp = stats.dhcp || 0;
+  var dns = stats.dns || 0;
+  var success = stats.success || 0;
+  var total = assoc + auth + dhcp + dns + success;
+  result = {
+    dhcp: dhcp,
+    dns: dns,
+    successRatePct: total > 0 ? (success / total * 100) : 0
+  };
+} catch (error) {
+  error_msg = error.toString();
+}
+
+return JSON.stringify({
+  'result': result,
+  'error': error_msg
+});
+"""
+).strip()
+
+SSID_CONNECTIONSTATS_SCRIPT_BODY = (
+    r"""
+var params = JSON.parse(value);
+"""
+    + "\n"
+    + _HTTP_SETUP
+    + r"""
+
+var error_msg = '';
+var result = {};
+
+try {
+  var response = request.get(url + 'networks/' + encodeURIComponent(params.networkid) +
+    '/wireless/ssids/' + encodeURIComponent(params.ssidnumber) + '/connectionStats?timespan=3600');
+  if (request.getStatus() !== 200) {
+    throw 'Failed to get connection stats: status ' + request.getStatus();
+  }
+  var stats = JSON.parse(response);
+  var assoc = stats.assoc || 0;
+  var auth = stats.auth || 0;
+  var dhcp = stats.dhcp || 0;
+  var dns = stats.dns || 0;
+  var success = stats.success || 0;
+  var total = assoc + auth + dhcp + dns + success;
+  result = {
+    dhcp: dhcp,
+    dns: dns,
+    successRatePct: total > 0 ? (success / total * 100) : 0
+  };
+} catch (error) {
+  error_msg = error.toString();
+}
+
+return JSON.stringify({
+  'result': result,
+  'error': error_msg
+});
+"""
+).strip()
+
 RADIO_UTILIZATION_SCRIPT_BODY = (
     r"""
 var params = JSON.parse(value);
