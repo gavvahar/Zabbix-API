@@ -41,7 +41,7 @@ commands = [["python3", "Python/scripts/no_classes_check.py"]]
 [tool.tox.env.prettier]
 skip_install = true
 allowlist_externals = ["npx"]
-commands = [["npx", "prettier", "--check", "**/*.{json,yml,yaml,md}"]]
+commands = [["npx", "prettier", "--check", "**/*.{js,json,yml,yaml,md}"]]
 
 # --- Formatting -------------------------------------------------------------
 
@@ -61,7 +61,7 @@ commands = [
     "--write",
     "--log-level",
     "log",
-    "**/*.{json,yml,yaml,md}",
+    "**/*.{js,json,yml,yaml,md}",
   ],
   [
     "ruff",
