@@ -51,6 +51,7 @@ DASHBOARD_MACROS = {
     "{$MERAKI.AUTHFAIL.HIGH}": "20",
     "{$MERAKI.AUTHFAIL.SSID.HIGH}": "10",
     "{$MERAKI.CLIENTCOUNT.TREND.THRESHOLD}": "50",  # % swing vs 1h avg that counts as abnormal
+    "{$MERAKI.DATA.TIMEOUT}": "60",  # every discovery rule/item prototype in wireless.py uses this
     "{$MERAKI.ORG.ID}": MERAKI_ORG_ID,
 }
 
