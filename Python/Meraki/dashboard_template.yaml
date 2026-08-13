@@ -1,0 +1,1473 @@
+zabbix_export:
+  version: '7.4'
+  template_groups:
+  - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
+    name: Templates/Applications
+  - uuid: 36bff6c29af64692839d077febfc7079
+    name: Templates/Network devices
+  templates:
+  - uuid: bddca8c984064559bc5c9957df4374fb
+    template: Cisco Meraki dashboard by HTTP - Wireless Health
+    name: Cisco Meraki dashboard by HTTP - Wireless Health
+    description: Extends the official "Cisco Meraki dashboard by HTTP" template (linked below, not duplicated) with per-network and per-SSID wireless health telemetry (client counts, auth failures, connection funnel stats, latency, throughput), per-radio channel/utilization data, and per-network-group bandwidth policy data, each via its own LLD rule. Attach this template instead of the base one; all of the base template's own items, triggers and discovery rules come along via the template link.
+    groups:
+    - name: Templates/Applications
+    - name: Templates/Network devices
+    templates:
+    - name: Cisco Meraki dashboard by HTTP
+    discovery_rules:
+    - uuid: 8c9d1195d535484b80d5677abf922f97
+      name: Network Discovery
+      type: SCRIPT
+      key: meraki.lld.networks
+      delay: '{$MERAKI.LLD.INTERVAL}'
+      timeout: '{$MERAKI.DATA.TIMEOUT}'
+      lifetime: 7d
+      params: |
+        var params = JSON.parse(value);
+
+        var request = new HttpRequest();
+        request.addHeader("X-Cisco-Meraki-API-Key:" + params.token);
+        request.addHeader("Content-Type: application/json");
+        request.addHeader("User-Agent: ZabbixServer/1.2 Zabbix");
+
+        if (typeof params.httpproxy !== "undefined" && params.httpproxy !== "") {
+          request.setProxy(params.httpproxy);
+        }
+
+        var url = params.url;
+        if (url.indexOf("http://") === -1 && url.indexOf("https://") === -1) {
+          url = "https://" + url;
+        }
+        if (url.slice(-1) !== "/") {
+          url = url + "/";
+        }
+
+        var response = request.get(
+          url + "organizations/" + encodeURIComponent(params.orgid) + "/networks",
+        );
+        if (request.getStatus() !== 200) {
+          throw "Failed to list networks: status " + request.getStatus();
+        }
+
+        var networks = JSON.parse(response);
+        var data = [];
+        networks.forEach(function (net) {
+          data.push({
+            "{#NETWORK_ID}": net.id,
+            "{#NETWORK_NAME}": net.name,
+          });
+        });
+
+        return JSON.stringify({ data: data });
+      parameters:
+      - name: httpproxy
+        value: '{$MERAKI.HTTP_PROXY}'
+      - name: orgid
+        value: '{$MERAKI.ORG.ID}'
+      - name: token
+        value: '{$MERAKI.TOKEN}'
+      - name: url
+        value: '{$MERAKI.API.URL}'
+      item_prototypes:
+      - uuid: dfcae868f646436f8283af93a486befa
+        name: 'Client count: {#NETWORK_NAME}'
+        type: SCRIPT
+        key: meraki.network.clientcount[{#NETWORK_ID}]
+        delay: '{$MERAKI.LLD.INTERVAL}'
+        timeout: '{$MERAKI.DATA.TIMEOUT}'
+        value_type: UNSIGNED
+        history: 31d
+        params: |
+          var params = JSON.parse(value);
+
+          var request = new HttpRequest();
+          request.addHeader("X-Cisco-Meraki-API-Key:" + params.token);
+          request.addHeader("Content-Type: application/json");
+          request.addHeader("User-Agent: ZabbixServer/1.2 Zabbix");
+
+          if (typeof params.httpproxy !== "undefined" && params.httpproxy !== "") {
+            request.setProxy(params.httpproxy);
+          }
+
+          var url = params.url;
+          if (url.indexOf("http://") === -1 && url.indexOf("https://") === -1) {
+            url = "https://" + url;
+          }
+          if (url.slice(-1) !== "/") {
+            url = url + "/";
+          }
+
+          var response = request.get(
+            url +
+              "networks/" +
+              encodeURIComponent(params.networkid) +
+              "/clients?timespan=300",
+          );
+          if (request.getStatus() !== 200) {
+            throw "Failed to list clients: status " + request.getStatus();
+          }
+
+          return JSON.parse(response).length;
+        parameters:
+        - name: httpproxy
+          value: '{$MERAKI.HTTP_PROXY}'
+        - name: networkid
+          value: '{#NETWORK_ID}'
+        - name: token
+          value: '{$MERAKI.TOKEN}'
+        - name: url
+          value: '{$MERAKI.API.URL}'
+        tags:
+        - tag: component
+          value: network
+      - uuid: 6296a9001d2a4151a5eabf12c2df517d
+        name: 'Client count trend (vs 1h avg): {#NETWORK_NAME}'
+        type: CALCULATED
+        key: meraki.network.clientcount.trend[{#NETWORK_ID}]
+        delay: '{$MERAKI.LLD.INTERVAL}'
+        value_type: FLOAT
+        units: '%'
+        history: 31d
+        params: (last(//meraki.network.clientcount[{#NETWORK_ID}])-avg(//meraki.network.clientcount[{#NETWORK_ID}],1h))/(avg(//meraki.network.clientcount[{#NETWORK_ID}],1h)+0.001)*100
+        tags:
+        - tag: component
+          value: network
+      - uuid: d224c6f997424b429c11ed8208efd3ed
+        name: 'Auth failures (1h): {#NETWORK_NAME}'
+        type: SCRIPT
+        key: meraki.network.authfailures[{#NETWORK_ID}]
+        delay: '{$MERAKI.LLD.INTERVAL}'
+        timeout: '{$MERAKI.DATA.TIMEOUT}'
+        value_type: UNSIGNED
+        history: 31d
+        params: |
+          var params = JSON.parse(value);
+
+          var request = new HttpRequest();
+          request.addHeader("X-Cisco-Meraki-API-Key:" + params.token);
+          request.addHeader("Content-Type: application/json");
+          request.addHeader("User-Agent: ZabbixServer/1.2 Zabbix");
+
+          if (typeof params.httpproxy !== "undefined" && params.httpproxy !== "") {
+            request.setProxy(params.httpproxy);
+          }
+
+          var url = params.url;
+          if (url.indexOf("http://") === -1 && url.indexOf("https://") === -1) {
+            url = "https://" + url;
+          }
+          if (url.slice(-1) !== "/") {
+            url = url + "/";
+          }
+
+          var response = request.get(
+            url +
+              "networks/" +
+              encodeURIComponent(params.networkid) +
+              "/wireless/failedConnections?timespan=3600",
+          );
+          if (request.getStatus() !== 200) {
+            throw "Failed to list failed connections: status " + request.getStatus();
+          }
+
+          var events = JSON.parse(response);
+          return events.filter(function (e) {
+            return e.type === "auth";
+          }).length;
+        parameters:
+        - name: httpproxy
+          value: '{$MERAKI.HTTP_PROXY}'
+        - name: networkid
+          value: '{#NETWORK_ID}'
+        - name: token
+          value: '{$MERAKI.TOKEN}'
+        - name: url
+          value: '{$MERAKI.API.URL}'
+        tags:
+        - tag: component
+          value: network
+      - uuid: bfce0efc2e8b461b8d5152bc65283d86
+        name: 'Connection stats: {#NETWORK_NAME}'
+        type: SCRIPT
+        key: meraki.network.connectionstats[{#NETWORK_ID}]
+        delay: '{$MERAKI.LLD.INTERVAL}'
+        timeout: '{$MERAKI.DATA.TIMEOUT}'
+        value_type: TEXT
+        history: '0'
+        params: |
+          var params = JSON.parse(value);
+
+          var request = new HttpRequest();
+          request.addHeader("X-Cisco-Meraki-API-Key:" + params.token);
+          request.addHeader("Content-Type: application/json");
+          request.addHeader("User-Agent: ZabbixServer/1.2 Zabbix");
+
+          if (typeof params.httpproxy !== "undefined" && params.httpproxy !== "") {
+            request.setProxy(params.httpproxy);
+          }
+
+          var url = params.url;
+          if (url.indexOf("http://") === -1 && url.indexOf("https://") === -1) {
+            url = "https://" + url;
+          }
+          if (url.slice(-1) !== "/") {
+            url = url + "/";
+          }
+
+          var error_msg = "";
+          var result = {};
+
+          try {
+            var response = request.get(
+              url +
+                "networks/" +
+                encodeURIComponent(params.networkid) +
+                "/wireless/connectionStats?timespan=3600",
+            );
+            if (request.getStatus() !== 200) {
+              throw "Failed to get connection stats: status " + request.getStatus();
+            }
+            var stats = JSON.parse(response);
+            var assoc = stats.assoc || 0;
+            var auth = stats.auth || 0;
+            var dhcp = stats.dhcp || 0;
+            var dns = stats.dns || 0;
+            var success = stats.success || 0;
+            var total = assoc + auth + dhcp + dns + success;
+            result = {
+              dhcp: dhcp,
+              dns: dns,
+              successRatePct: total > 0 ? (success / total) * 100 : 0,
+            };
+          } catch (error) {
+            error_msg = error.toString();
+          }
+
+          return JSON.stringify({
+            result: result,
+            error: error_msg,
+          });
+        parameters:
+        - name: httpproxy
+          value: '{$MERAKI.HTTP_PROXY}'
+        - name: networkid
+          value: '{#NETWORK_ID}'
+        - name: token
+          value: '{$MERAKI.TOKEN}'
+        - name: url
+          value: '{$MERAKI.API.URL}'
+        tags:
+        - tag: component
+          value: raw
+      - uuid: a8df2b8f0e7c4cf89e9b5a782a448422
+        name: 'DHCP failures (1h): {#NETWORK_NAME}'
+        type: DEPENDENT
+        key: meraki.network.dhcpfailures[{#NETWORK_ID}]
+        value_type: UNSIGNED
+        history: 31d
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.result.dhcp
+          error_handler: DISCARD_VALUE
+        master_item:
+          key: meraki.network.connectionstats[{#NETWORK_ID}]
+        tags:
+        - tag: component
+          value: network
+      - uuid: 6f438f6a138142cabc44d88d2699dc9d
+        name: 'DNS failures (1h): {#NETWORK_NAME}'
+        type: DEPENDENT
+        key: meraki.network.dnsfailures[{#NETWORK_ID}]
+        value_type: UNSIGNED
+        history: 31d
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.result.dns
+          error_handler: DISCARD_VALUE
+        master_item:
+          key: meraki.network.connectionstats[{#NETWORK_ID}]
+        tags:
+        - tag: component
+          value: network
+      - uuid: f907d1fb35d7400cabce21465f986b0f
+        name: 'Connection success rate (1h): {#NETWORK_NAME}'
+        type: DEPENDENT
+        key: meraki.network.connections.successrate[{#NETWORK_ID}]
+        value_type: FLOAT
+        units: '%'
+        history: 31d
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.result.successRatePct
+          error_handler: DISCARD_VALUE
+        master_item:
+          key: meraki.network.connectionstats[{#NETWORK_ID}]
+        tags:
+        - tag: component
+          value: network
+      - uuid: e66923561bd94100ad2b553ef784d93a
+        name: 'Latency stats: {#NETWORK_NAME}'
+        type: SCRIPT
+        key: meraki.network.latencystats[{#NETWORK_ID}]
+        delay: '{$MERAKI.LLD.INTERVAL}'
+        timeout: '{$MERAKI.DATA.TIMEOUT}'
+        value_type: TEXT
+        history: '0'
+        params: |
+          var params = JSON.parse(value);
+
+          var request = new HttpRequest();
+          request.addHeader("X-Cisco-Meraki-API-Key:" + params.token);
+          request.addHeader("Content-Type: application/json");
+          request.addHeader("User-Agent: ZabbixServer/1.2 Zabbix");
+
+          if (typeof params.httpproxy !== "undefined" && params.httpproxy !== "") {
+            request.setProxy(params.httpproxy);
+          }
+
+          var url = params.url;
+          if (url.indexOf("http://") === -1 && url.indexOf("https://") === -1) {
+            url = "https://" + url;
+          }
+          if (url.slice(-1) !== "/") {
+            url = url + "/";
+          }
+
+          var error_msg = "";
+          var result = {};
+
+          try {
+            var response = request.get(
+              url +
+                "networks/" +
+                encodeURIComponent(params.networkid) +
+                "/wireless/latencyStats?timespan=3600",
+            );
+            if (request.getStatus() !== 200) {
+              throw "Failed to get latency stats: status " + request.getStatus();
+            }
+            var stats = JSON.parse(response);
+            result = {
+              voice:
+                stats.voiceTraffic && stats.voiceTraffic.avg != null
+                  ? stats.voiceTraffic.avg
+                  : 0,
+              video:
+                stats.videoTraffic && stats.videoTraffic.avg != null
+                  ? stats.videoTraffic.avg
+                  : 0,
+              bestEffort:
+                stats.bestEffortTraffic && stats.bestEffortTraffic.avg != null
+                  ? stats.bestEffortTraffic.avg
+                  : 0,
+              background:
+                stats.backgroundTraffic && stats.backgroundTraffic.avg != null
+                  ? stats.backgroundTraffic.avg
+                  : 0,
+            };
+          } catch (error) {
+            error_msg = error.toString();
+          }
+
+          return JSON.stringify({
+            result: result,
+            error: error_msg,
+          });
+        parameters:
+        - name: httpproxy
+          value: '{$MERAKI.HTTP_PROXY}'
+        - name: networkid
+          value: '{#NETWORK_ID}'
+        - name: token
+          value: '{$MERAKI.TOKEN}'
+        - name: url
+          value: '{$MERAKI.API.URL}'
+        tags:
+        - tag: component
+          value: raw
+      - uuid: 8252dd50ec664bf5ac2b5bb387841e03
+        name: 'Voice latency (1h): {#NETWORK_NAME}'
+        type: DEPENDENT
+        key: meraki.network.latency.voice[{#NETWORK_ID}]
+        value_type: FLOAT
+        units: ms
+        history: 31d
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.result.voice
+          error_handler: DISCARD_VALUE
+        master_item:
+          key: meraki.network.latencystats[{#NETWORK_ID}]
+        tags:
+        - tag: component
+          value: network
+      - uuid: 39527298bf4a44698ad9d260715cdf03
+        name: 'Video latency (1h): {#NETWORK_NAME}'
+        type: DEPENDENT
+        key: meraki.network.latency.video[{#NETWORK_ID}]
+        value_type: FLOAT
+        units: ms
+        history: 31d
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.result.video
+          error_handler: DISCARD_VALUE
+        master_item:
+          key: meraki.network.latencystats[{#NETWORK_ID}]
+        tags:
+        - tag: component
+          value: network
+      - uuid: abfab5e95f8e46db9f3fad71046cd623
+        name: 'Best effort latency (1h): {#NETWORK_NAME}'
+        type: DEPENDENT
+        key: meraki.network.latency.besteffort[{#NETWORK_ID}]
+        value_type: FLOAT
+        units: ms
+        history: 31d
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.result.bestEffort
+          error_handler: DISCARD_VALUE
+        master_item:
+          key: meraki.network.latencystats[{#NETWORK_ID}]
+        tags:
+        - tag: component
+          value: network
+      - uuid: 3b01dff798e2474c9b385585af47df75
+        name: 'Background latency (1h): {#NETWORK_NAME}'
+        type: DEPENDENT
+        key: meraki.network.latency.background[{#NETWORK_ID}]
+        value_type: FLOAT
+        units: ms
+        history: 31d
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.result.background
+          error_handler: DISCARD_VALUE
+        master_item:
+          key: meraki.network.latencystats[{#NETWORK_ID}]
+        tags:
+        - tag: component
+          value: network
+      - uuid: d42419c7d62243e59f467dcd4e34d490
+        name: 'Wireless usage: {#NETWORK_NAME}'
+        type: SCRIPT
+        key: meraki.network.usage[{#NETWORK_ID}]
+        delay: '{$MERAKI.LLD.INTERVAL}'
+        timeout: '{$MERAKI.DATA.TIMEOUT}'
+        value_type: TEXT
+        history: '0'
+        params: |
+          var params = JSON.parse(value);
+
+          var request = new HttpRequest();
+          request.addHeader("X-Cisco-Meraki-API-Key:" + params.token);
+          request.addHeader("Content-Type: application/json");
+          request.addHeader("User-Agent: ZabbixServer/1.2 Zabbix");
+
+          if (typeof params.httpproxy !== "undefined" && params.httpproxy !== "") {
+            request.setProxy(params.httpproxy);
+          }
+
+          var url = params.url;
+          if (url.indexOf("http://") === -1 && url.indexOf("https://") === -1) {
+            url = "https://" + url;
+          }
+          if (url.slice(-1) !== "/") {
+            url = url + "/";
+          }
+
+          var error_msg = "";
+          var result = {};
+
+          try {
+            var response = request.get(
+              url +
+                "networks/" +
+                encodeURIComponent(params.networkid) +
+                "/clients?timespan=300",
+            );
+            if (request.getStatus() !== 200) {
+              throw "Failed to list clients: status " + request.getStatus();
+            }
+            var clients = JSON.parse(response);
+            var sentKB = 0;
+            var recvKB = 0;
+            clients.forEach(function (c) {
+              if (c.usage) {
+                sentKB += c.usage.sent || 0;
+                recvKB += c.usage.recv || 0;
+              }
+            });
+            var timespanSeconds = 300;
+            result = {
+              sentKbps: (sentKB * 8) / timespanSeconds,
+              receivedKbps: (recvKB * 8) / timespanSeconds,
+              totalKbps: ((sentKB + recvKB) * 8) / timespanSeconds,
+            };
+          } catch (error) {
+            error_msg = error.toString();
+          }
+
+          return JSON.stringify({
+            result: result,
+            error: error_msg,
+          });
+        parameters:
+        - name: httpproxy
+          value: '{$MERAKI.HTTP_PROXY}'
+        - name: networkid
+          value: '{#NETWORK_ID}'
+        - name: token
+          value: '{$MERAKI.TOKEN}'
+        - name: url
+          value: '{$MERAKI.API.URL}'
+        tags:
+        - tag: component
+          value: raw
+      - uuid: c0ebd60418bb43bead366d8a8d1ab945
+        name: 'Upload throughput: {#NETWORK_NAME}'
+        type: DEPENDENT
+        key: meraki.network.throughput.up[{#NETWORK_ID}]
+        value_type: FLOAT
+        units: Kbps
+        history: 31d
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.result.sentKbps
+          error_handler: DISCARD_VALUE
+        master_item:
+          key: meraki.network.usage[{#NETWORK_ID}]
+        tags:
+        - tag: component
+          value: network
+      - uuid: 025d4befcd57491bb301b70745629cb7
+        name: 'Download throughput: {#NETWORK_NAME}'
+        type: DEPENDENT
+        key: meraki.network.throughput.down[{#NETWORK_ID}]
+        value_type: FLOAT
+        units: Kbps
+        history: 31d
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.result.receivedKbps
+          error_handler: DISCARD_VALUE
+        master_item:
+          key: meraki.network.usage[{#NETWORK_ID}]
+        tags:
+        - tag: component
+          value: network
+      - uuid: 9d0d55a301d44951aca893a53c07a305
+        name: 'Total wireless usage: {#NETWORK_NAME}'
+        type: DEPENDENT
+        key: meraki.network.throughput.total[{#NETWORK_ID}]
+        value_type: FLOAT
+        units: Kbps
+        history: 31d
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.result.totalKbps
+          error_handler: DISCARD_VALUE
+        master_item:
+          key: meraki.network.usage[{#NETWORK_ID}]
+        tags:
+        - tag: component
+          value: network
+      trigger_prototypes:
+      - uuid: 21649a98aa6c485fad032b7591fda013
+        expression: abs(last(/Cisco Meraki dashboard by HTTP - Wireless Health/meraki.network.clientcount.trend[{#NETWORK_ID}]))>{$MERAKI.CLIENTCOUNT.TREND.THRESHOLD}
+        name: 'Meraki: Client count trend abnormal on {#NETWORK_NAME}'
+        priority: WARNING
+        tags:
+        - tag: scope
+          value: performance
+      - uuid: c241afd21a664d60937a05f68da1b493
+        expression: last(/Cisco Meraki dashboard by HTTP - Wireless Health/meraki.network.clientcount[{#NETWORK_ID}])>{$MERAKI.CLIENTCOUNT.HIGH}
+        name: 'Meraki: High client count on {#NETWORK_NAME}'
+        priority: WARNING
+        tags:
+        - tag: scope
+          value: performance
+      - uuid: 277545725a174a40b43b07dde7eda635
+        expression: last(/Cisco Meraki dashboard by HTTP - Wireless Health/meraki.network.authfailures[{#NETWORK_ID}])>{$MERAKI.AUTHFAIL.HIGH} or last(/Cisco Meraki dashboard by HTTP - Wireless Health/meraki.network.clientcount[{#NETWORK_ID}])>({$MERAKI.CLIENTCOUNT.HIGH}*2)
+        name: 'Meraki: Wireless health degraded on {#NETWORK_NAME}'
+        priority: AVERAGE
+        tags:
+        - tag: scope
+          value: performance
+    - uuid: cbff2353c61e490ca77a859fb6976a32
+      name: SSID Discovery
+      type: SCRIPT
+      key: meraki.lld.ssids
+      delay: '{$MERAKI.LLD.INTERVAL}'
+      timeout: '{$MERAKI.DATA.TIMEOUT}'
+      lifetime: 7d
+      params: |
+        var params = JSON.parse(value);
+
+        var request = new HttpRequest();
+        request.addHeader("X-Cisco-Meraki-API-Key:" + params.token);
+        request.addHeader("Content-Type: application/json");
+        request.addHeader("User-Agent: ZabbixServer/1.2 Zabbix");
+
+        if (typeof params.httpproxy !== "undefined" && params.httpproxy !== "") {
+          request.setProxy(params.httpproxy);
+        }
+
+        var url = params.url;
+        if (url.indexOf("http://") === -1 && url.indexOf("https://") === -1) {
+          url = "https://" + url;
+        }
+        if (url.slice(-1) !== "/") {
+          url = url + "/";
+        }
+
+        var netResponse = request.get(
+          url + "organizations/" + encodeURIComponent(params.orgid) + "/networks",
+        );
+        if (request.getStatus() !== 200) {
+          throw "Failed to list networks: status " + request.getStatus();
+        }
+        var networks = JSON.parse(netResponse);
+
+        var data = [];
+        var failures = [];
+        networks.forEach(function (net) {
+          var ssidResponse = request.get(
+            url + "networks/" + encodeURIComponent(net.id) + "/wireless/ssids",
+          );
+          var status = request.getStatus();
+          if (status !== 200) {
+            // Legitimately non-wireless networks (e.g. appliance-only) 404 here — that's
+            // fine to skip. But silently swallowing EVERY status code hides real failures
+            // (auth/permission errors, wrong path, etc.), so failures are collected and
+            // only ignored if at least one network came back with real SSID data.
+            failures.push(
+              net.name +
+                " (" +
+                net.id +
+                "): status " +
+                status +
+                " - " +
+                (ssidResponse || "").substring(0, 200),
+            );
+            return;
+          }
+          var ssids = JSON.parse(ssidResponse);
+          ssids.forEach(function (ssid) {
+            if (!ssid.enabled) {
+              return;
+            }
+            data.push({
+              "{#NETWORK_ID}": net.id,
+              "{#NETWORK_NAME}": net.name,
+              "{#SSID_NUMBER}": ssid.number,
+              "{#SSID_NAME}": ssid.name,
+            });
+          });
+        });
+
+        if (data.length === 0 && failures.length > 0) {
+          throw "No SSIDs found; per-network failures: " + failures.join(" | ");
+        }
+
+        return JSON.stringify({ data: data });
+      parameters:
+      - name: httpproxy
+        value: '{$MERAKI.HTTP_PROXY}'
+      - name: orgid
+        value: '{$MERAKI.ORG.ID}'
+      - name: token
+        value: '{$MERAKI.TOKEN}'
+      - name: url
+        value: '{$MERAKI.API.URL}'
+      item_prototypes:
+      - uuid: e395f1eee5d6434a923efdbeca54fa38
+        name: 'Auth failures (1h): {#SSID_NAME} on {#NETWORK_NAME}'
+        type: SCRIPT
+        key: meraki.ssid.authfailures[{#NETWORK_ID},{#SSID_NUMBER}]
+        delay: '{$MERAKI.LLD.INTERVAL}'
+        timeout: '{$MERAKI.DATA.TIMEOUT}'
+        value_type: UNSIGNED
+        history: 31d
+        params: |
+          var params = JSON.parse(value);
+
+          var request = new HttpRequest();
+          request.addHeader("X-Cisco-Meraki-API-Key:" + params.token);
+          request.addHeader("Content-Type: application/json");
+          request.addHeader("User-Agent: ZabbixServer/1.2 Zabbix");
+
+          if (typeof params.httpproxy !== "undefined" && params.httpproxy !== "") {
+            request.setProxy(params.httpproxy);
+          }
+
+          var url = params.url;
+          if (url.indexOf("http://") === -1 && url.indexOf("https://") === -1) {
+            url = "https://" + url;
+          }
+          if (url.slice(-1) !== "/") {
+            url = url + "/";
+          }
+
+          var response = request.get(
+            url +
+              "networks/" +
+              encodeURIComponent(params.networkid) +
+              "/wireless/failedConnections?timespan=3600&ssidNumber=" +
+              encodeURIComponent(params.ssidnumber),
+          );
+          if (request.getStatus() !== 200) {
+            throw "Failed to list failed connections: status " + request.getStatus();
+          }
+
+          var events = JSON.parse(response);
+          return events.filter(function (e) {
+            return e.type === "auth";
+          }).length;
+        parameters:
+        - name: httpproxy
+          value: '{$MERAKI.HTTP_PROXY}'
+        - name: networkid
+          value: '{#NETWORK_ID}'
+        - name: ssidnumber
+          value: '{#SSID_NUMBER}'
+        - name: token
+          value: '{$MERAKI.TOKEN}'
+        - name: url
+          value: '{$MERAKI.API.URL}'
+        tags:
+        - tag: component
+          value: ssid
+      - uuid: 7fda6436266849d98942c9af8c4f5316
+        name: 'Connected clients: {#SSID_NAME} on {#NETWORK_NAME}'
+        type: SCRIPT
+        key: meraki.ssid.clientcount[{#NETWORK_ID},{#SSID_NUMBER}]
+        delay: '{$MERAKI.LLD.INTERVAL}'
+        timeout: '{$MERAKI.DATA.TIMEOUT}'
+        value_type: UNSIGNED
+        history: 31d
+        params: |
+          var params = JSON.parse(value);
+
+          var request = new HttpRequest();
+          request.addHeader("X-Cisco-Meraki-API-Key:" + params.token);
+          request.addHeader("Content-Type: application/json");
+          request.addHeader("User-Agent: ZabbixServer/1.2 Zabbix");
+
+          if (typeof params.httpproxy !== "undefined" && params.httpproxy !== "") {
+            request.setProxy(params.httpproxy);
+          }
+
+          var url = params.url;
+          if (url.indexOf("http://") === -1 && url.indexOf("https://") === -1) {
+            url = "https://" + url;
+          }
+          if (url.slice(-1) !== "/") {
+            url = url + "/";
+          }
+
+          var response = request.get(
+            url +
+              "networks/" +
+              encodeURIComponent(params.networkid) +
+              "/clients?timespan=300",
+          );
+          if (request.getStatus() !== 200) {
+            throw "Failed to list clients: status " + request.getStatus();
+          }
+
+          var clients = JSON.parse(response);
+          var count = 0;
+          clients.forEach(function (c) {
+            if (c.ssid === params.ssidname) {
+              count++;
+            }
+          });
+          return count;
+        parameters:
+        - name: httpproxy
+          value: '{$MERAKI.HTTP_PROXY}'
+        - name: networkid
+          value: '{#NETWORK_ID}'
+        - name: ssidname
+          value: '{#SSID_NAME}'
+        - name: token
+          value: '{$MERAKI.TOKEN}'
+        - name: url
+          value: '{$MERAKI.API.URL}'
+        tags:
+        - tag: component
+          value: ssid
+      - uuid: fe27591f6e514dd69ea062d9055dd717
+        name: 'Connection stats: {#SSID_NAME} on {#NETWORK_NAME}'
+        type: SCRIPT
+        key: meraki.ssid.connectionstats[{#NETWORK_ID},{#SSID_NUMBER}]
+        delay: '{$MERAKI.LLD.INTERVAL}'
+        timeout: '{$MERAKI.DATA.TIMEOUT}'
+        value_type: TEXT
+        history: '0'
+        params: |
+          var params = JSON.parse(value);
+
+          var request = new HttpRequest();
+          request.addHeader("X-Cisco-Meraki-API-Key:" + params.token);
+          request.addHeader("Content-Type: application/json");
+          request.addHeader("User-Agent: ZabbixServer/1.2 Zabbix");
+
+          if (typeof params.httpproxy !== "undefined" && params.httpproxy !== "") {
+            request.setProxy(params.httpproxy);
+          }
+
+          var url = params.url;
+          if (url.indexOf("http://") === -1 && url.indexOf("https://") === -1) {
+            url = "https://" + url;
+          }
+          if (url.slice(-1) !== "/") {
+            url = url + "/";
+          }
+
+          var error_msg = "";
+          var result = {};
+
+          try {
+            var response = request.get(
+              url +
+                "networks/" +
+                encodeURIComponent(params.networkid) +
+                "/wireless/ssids/" +
+                encodeURIComponent(params.ssidnumber) +
+                "/connectionStats?timespan=3600",
+            );
+            if (request.getStatus() !== 200) {
+              throw "Failed to get connection stats: status " + request.getStatus();
+            }
+            var stats = JSON.parse(response);
+            var assoc = stats.assoc || 0;
+            var auth = stats.auth || 0;
+            var dhcp = stats.dhcp || 0;
+            var dns = stats.dns || 0;
+            var success = stats.success || 0;
+            var total = assoc + auth + dhcp + dns + success;
+            result = {
+              dhcp: dhcp,
+              dns: dns,
+              successRatePct: total > 0 ? (success / total) * 100 : 0,
+            };
+          } catch (error) {
+            error_msg = error.toString();
+          }
+
+          return JSON.stringify({
+            result: result,
+            error: error_msg,
+          });
+        parameters:
+        - name: httpproxy
+          value: '{$MERAKI.HTTP_PROXY}'
+        - name: networkid
+          value: '{#NETWORK_ID}'
+        - name: ssidnumber
+          value: '{#SSID_NUMBER}'
+        - name: token
+          value: '{$MERAKI.TOKEN}'
+        - name: url
+          value: '{$MERAKI.API.URL}'
+        tags:
+        - tag: component
+          value: raw
+      - uuid: 0fc2820728214da1ba33278168748b40
+        name: 'DHCP failures (1h): {#SSID_NAME} on {#NETWORK_NAME}'
+        type: DEPENDENT
+        key: meraki.ssid.dhcpfailures[{#NETWORK_ID},{#SSID_NUMBER}]
+        value_type: UNSIGNED
+        history: 31d
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.result.dhcp
+          error_handler: DISCARD_VALUE
+        master_item:
+          key: meraki.ssid.connectionstats[{#NETWORK_ID},{#SSID_NUMBER}]
+        tags:
+        - tag: component
+          value: ssid
+      - uuid: 4d65be2ce20047dcb5db4c9706e5f132
+        name: 'DNS failures (1h): {#SSID_NAME} on {#NETWORK_NAME}'
+        type: DEPENDENT
+        key: meraki.ssid.dnsfailures[{#NETWORK_ID},{#SSID_NUMBER}]
+        value_type: UNSIGNED
+        history: 31d
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.result.dns
+          error_handler: DISCARD_VALUE
+        master_item:
+          key: meraki.ssid.connectionstats[{#NETWORK_ID},{#SSID_NUMBER}]
+        tags:
+        - tag: component
+          value: ssid
+      - uuid: c8527c5341624fcaa6f4096d8f819838
+        name: 'Connection success rate (1h): {#SSID_NAME} on {#NETWORK_NAME}'
+        type: DEPENDENT
+        key: meraki.ssid.connections.successrate[{#NETWORK_ID},{#SSID_NUMBER}]
+        value_type: FLOAT
+        units: '%'
+        history: 31d
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.result.successRatePct
+          error_handler: DISCARD_VALUE
+        master_item:
+          key: meraki.ssid.connectionstats[{#NETWORK_ID},{#SSID_NUMBER}]
+        tags:
+        - tag: component
+          value: ssid
+      trigger_prototypes:
+      - uuid: b80fe98ec40844a88561c6db7282b666
+        expression: last(/Cisco Meraki dashboard by HTTP - Wireless Health/meraki.ssid.authfailures[{#NETWORK_ID},{#SSID_NUMBER}])>{$MERAKI.AUTHFAIL.SSID.HIGH}
+        name: 'Meraki: Authentication failure rate high on {#SSID_NAME} ({#NETWORK_NAME})'
+        priority: WARNING
+        tags:
+        - tag: scope
+          value: performance
+    - uuid: 18d535fba3ed4588a07c048d5bd5c985
+      name: Radio Discovery
+      type: SCRIPT
+      key: meraki.lld.radios
+      delay: '{$MERAKI.LLD.INTERVAL}'
+      timeout: '{$MERAKI.DATA.TIMEOUT}'
+      lifetime: 7d
+      params: |
+        var params = JSON.parse(value);
+
+        var request = new HttpRequest();
+        request.addHeader("X-Cisco-Meraki-API-Key:" + params.token);
+        request.addHeader("Content-Type: application/json");
+        request.addHeader("User-Agent: ZabbixServer/1.2 Zabbix");
+
+        if (typeof params.httpproxy !== "undefined" && params.httpproxy !== "") {
+          request.setProxy(params.httpproxy);
+        }
+
+        var url = params.url;
+        if (url.indexOf("http://") === -1 && url.indexOf("https://") === -1) {
+          url = "https://" + url;
+        }
+        if (url.slice(-1) !== "/") {
+          url = url + "/";
+        }
+
+        // Uses the SSID-status-by-device endpoint (not channelUtilization/byDevice)
+        // specifically because it exposes each radio's index — some APs run two
+        // physical radios on the same band (e.g. dual 5GHz), which channel
+        // utilization alone can't distinguish. {#RADIO_INDEX} is what makes those
+        // radios discoverable as separate entities instead of colliding.
+        var response = request.get(
+          url +
+            "organizations/" +
+            encodeURIComponent(params.orgid) +
+            "/wireless/ssids/statuses/byDevice?perPage=500",
+        );
+        if (request.getStatus() !== 200) {
+          throw "Failed to list radio statuses: status " + request.getStatus();
+        }
+
+        var result = JSON.parse(response);
+        var seen = {};
+        var data = [];
+        (result.items || []).forEach(function (device) {
+          (device.basicServiceSets || []).forEach(function (bss) {
+            if (!bss.radio) {
+              return;
+            }
+            var key = device.serial + ":" + bss.radio.band + ":" + bss.radio.index;
+            if (seen[key]) {
+              return;
+            }
+            seen[key] = true;
+            data.push({
+              "{#SERIAL}": device.serial,
+              "{#AP_NAME}": device.name || device.serial,
+              "{#RADIO_BAND}": bss.radio.band,
+              "{#RADIO_INDEX}": bss.radio.index,
+            });
+          });
+        });
+
+        return JSON.stringify({ data: data });
+      parameters:
+      - name: httpproxy
+        value: '{$MERAKI.HTTP_PROXY}'
+      - name: orgid
+        value: '{$MERAKI.ORG.ID}'
+      - name: token
+        value: '{$MERAKI.TOKEN}'
+      - name: url
+        value: '{$MERAKI.API.URL}'
+      item_prototypes:
+      - uuid: 398ab9d2dc484ecd90202e9e2fde12ef
+        name: 'Channel utilization: {#AP_NAME} ({#RADIO_BAND}GHz, radio {#RADIO_INDEX})'
+        type: SCRIPT
+        key: meraki.radio.utilization[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
+        delay: '{$MERAKI.LLD.INTERVAL}'
+        timeout: '{$MERAKI.DATA.TIMEOUT}'
+        value_type: FLOAT
+        units: '%'
+        history: 31d
+        params: |
+          var params = JSON.parse(value);
+
+          var request = new HttpRequest();
+          request.addHeader("X-Cisco-Meraki-API-Key:" + params.token);
+          request.addHeader("Content-Type: application/json");
+          request.addHeader("User-Agent: ZabbixServer/1.2 Zabbix");
+
+          if (typeof params.httpproxy !== "undefined" && params.httpproxy !== "") {
+            request.setProxy(params.httpproxy);
+          }
+
+          var url = params.url;
+          if (url.indexOf("http://") === -1 && url.indexOf("https://") === -1) {
+            url = "https://" + url;
+          }
+          if (url.slice(-1) !== "/") {
+            url = url + "/";
+          }
+
+          var response = request.get(
+            url +
+              "organizations/" +
+              encodeURIComponent(params.orgid) +
+              "/wireless/devices/channelUtilization/byDevice?perPage=500",
+          );
+          if (request.getStatus() !== 200) {
+            throw "Failed to list channel utilization: status " + request.getStatus();
+          }
+
+          var devices = JSON.parse(response);
+          var device = null;
+          for (var i = 0; i < devices.length; i++) {
+            if (devices[i].serial === params.serial) {
+              device = devices[i];
+              break;
+            }
+          }
+          if (device === null) {
+            throw "No utilization data for " + params.serial;
+          }
+
+          var band = null;
+          (device.byBand || []).forEach(function (b) {
+            if (b.band === params.band) {
+              band = b;
+            }
+          });
+          if (band === null) {
+            throw "No band data for " + params.band + " on " + params.serial;
+          }
+
+          return band.utilization != null ? band.utilization : 0;
+        parameters:
+        - name: band
+          value: '{#RADIO_BAND}'
+        - name: httpproxy
+          value: '{$MERAKI.HTTP_PROXY}'
+        - name: orgid
+          value: '{$MERAKI.ORG.ID}'
+        - name: serial
+          value: '{#SERIAL}'
+        - name: token
+          value: '{$MERAKI.TOKEN}'
+        - name: url
+          value: '{$MERAKI.API.URL}'
+        tags:
+        - tag: component
+          value: radio
+      - uuid: 74119a4578564d9c81eab8ac55f41694
+        name: 'Radio status: {#AP_NAME} ({#RADIO_BAND}GHz, radio {#RADIO_INDEX})'
+        type: SCRIPT
+        key: meraki.radio.status[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
+        delay: '{$MERAKI.LLD.INTERVAL}'
+        timeout: '{$MERAKI.DATA.TIMEOUT}'
+        value_type: TEXT
+        history: '0'
+        params: |
+          var params = JSON.parse(value);
+
+          var request = new HttpRequest();
+          request.addHeader("X-Cisco-Meraki-API-Key:" + params.token);
+          request.addHeader("Content-Type: application/json");
+          request.addHeader("User-Agent: ZabbixServer/1.2 Zabbix");
+
+          if (typeof params.httpproxy !== "undefined" && params.httpproxy !== "") {
+            request.setProxy(params.httpproxy);
+          }
+
+          var url = params.url;
+          if (url.indexOf("http://") === -1 && url.indexOf("https://") === -1) {
+            url = "https://" + url;
+          }
+          if (url.slice(-1) !== "/") {
+            url = url + "/";
+          }
+
+          var error_msg = "";
+          var result = {};
+
+          try {
+            var response = request.get(
+              url +
+                "organizations/" +
+                encodeURIComponent(params.orgid) +
+                "/wireless/ssids/statuses/byDevice?serials%5B%5D=" +
+                encodeURIComponent(params.serial),
+            );
+            if (request.getStatus() !== 200) {
+              throw "Failed to get radio status: status " + request.getStatus();
+            }
+            var parsed = JSON.parse(response);
+            var device = (parsed.items || [])[0];
+            var radios = {};
+            if (device) {
+              (device.basicServiceSets || []).forEach(function (bss) {
+                if (!bss.radio) {
+                  return;
+                }
+                var key = bss.radio.band + "_" + bss.radio.index;
+                if (!radios[key]) {
+                  radios[key] = {
+                    channel: bss.radio.channel,
+                    channelWidth: bss.radio.channelWidth,
+                    power: bss.radio.power,
+                    broadcasting: false,
+                    ssidNames: [],
+                  };
+                }
+                if (bss.radio.isBroadcasting) {
+                  radios[key].broadcasting = true;
+                  if (bss.ssid && bss.ssid.name) {
+                    radios[key].ssidNames.push(bss.ssid.name);
+                  }
+                }
+              });
+            }
+            Object.keys(radios).forEach(function (key) {
+              radios[key].ssids = radios[key].ssidNames.join(", ");
+              delete radios[key].ssidNames;
+            });
+            result = { radios: radios };
+          } catch (error) {
+            error_msg = error.toString();
+          }
+
+          return JSON.stringify({
+            result: result,
+            error: error_msg,
+          });
+        parameters:
+        - name: httpproxy
+          value: '{$MERAKI.HTTP_PROXY}'
+        - name: orgid
+          value: '{$MERAKI.ORG.ID}'
+        - name: serial
+          value: '{#SERIAL}'
+        - name: token
+          value: '{$MERAKI.TOKEN}'
+        - name: url
+          value: '{$MERAKI.API.URL}'
+        tags:
+        - tag: component
+          value: raw
+      - uuid: e7fc699ed8ff4fd7afd1b3407ddc8b48
+        name: 'Channel: {#AP_NAME} ({#RADIO_BAND}GHz, radio {#RADIO_INDEX})'
+        type: DEPENDENT
+        key: meraki.radio.channel[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
+        value_type: UNSIGNED
+        history: 31d
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.result.radios['{#RADIO_BAND}_{#RADIO_INDEX}'].channel
+          error_handler: DISCARD_VALUE
+        master_item:
+          key: meraki.radio.status[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
+        tags:
+        - tag: component
+          value: radio
+      - uuid: cd5395d0ae734255aa1ab5c77adb60fb
+        name: 'Channel width: {#AP_NAME} ({#RADIO_BAND}GHz, radio {#RADIO_INDEX})'
+        type: DEPENDENT
+        key: meraki.radio.channelwidth[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
+        value_type: UNSIGNED
+        units: MHz
+        history: 31d
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.result.radios['{#RADIO_BAND}_{#RADIO_INDEX}'].channelWidth
+          error_handler: DISCARD_VALUE
+        master_item:
+          key: meraki.radio.status[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
+        tags:
+        - tag: component
+          value: radio
+      - uuid: 9ec3b5e072554e9ab4adee3900b051b7
+        name: 'TX power: {#AP_NAME} ({#RADIO_BAND}GHz, radio {#RADIO_INDEX})'
+        type: DEPENDENT
+        key: meraki.radio.power[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
+        value_type: UNSIGNED
+        units: dBm
+        history: 31d
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.result.radios['{#RADIO_BAND}_{#RADIO_INDEX}'].power
+          error_handler: DISCARD_VALUE
+        master_item:
+          key: meraki.radio.status[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
+        tags:
+        - tag: component
+          value: radio
+      - uuid: e3beb24faf8442e8a5023dd8abe171a6
+        name: 'Broadcasting: {#AP_NAME} ({#RADIO_BAND}GHz, radio {#RADIO_INDEX})'
+        type: DEPENDENT
+        key: meraki.radio.broadcasting[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
+        value_type: UNSIGNED
+        history: 31d
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.result.radios['{#RADIO_BAND}_{#RADIO_INDEX}'].broadcasting
+          error_handler: DISCARD_VALUE
+        - type: BOOL_TO_DECIMAL
+        master_item:
+          key: meraki.radio.status[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
+        tags:
+        - tag: component
+          value: radio
+      - uuid: 5dd06111b342410fa8358e64fde99126
+        name: 'SSIDs broadcasting: {#AP_NAME} ({#RADIO_BAND}GHz, radio {#RADIO_INDEX})'
+        type: DEPENDENT
+        key: meraki.radio.ssids[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
+        value_type: TEXT
+        history: 31d
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.result.radios['{#RADIO_BAND}_{#RADIO_INDEX}'].ssids
+          error_handler: DISCARD_VALUE
+        master_item:
+          key: meraki.radio.status[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
+        tags:
+        - tag: component
+          value: radio
+    - uuid: e64fa924b80846109cc40b8da7d7f2c2
+      name: Client Groups Discovery
+      type: SCRIPT
+      key: meraki.lld.clientgroups
+      delay: '{$MERAKI.LLD.INTERVAL}'
+      timeout: '{$MERAKI.DATA.TIMEOUT}'
+      lifetime: 7d
+      params: |
+        var params = JSON.parse(value);
+
+        var request = new HttpRequest();
+        request.addHeader("X-Cisco-Meraki-API-Key:" + params.token);
+        request.addHeader("Content-Type: application/json");
+        request.addHeader("User-Agent: ZabbixServer/1.2 Zabbix");
+
+        if (typeof params.httpproxy !== "undefined" && params.httpproxy !== "") {
+          request.setProxy(params.httpproxy);
+        }
+
+        var url = params.url;
+        if (url.indexOf("http://") === -1 && url.indexOf("https://") === -1) {
+          url = "https://" + url;
+        }
+        if (url.slice(-1) !== "/") {
+          url = url + "/";
+        }
+
+        var netResponse = request.get(
+          url + "organizations/" + encodeURIComponent(params.orgid) + "/networks",
+        );
+        if (request.getStatus() !== 200) {
+          throw "Failed to list networks: status " + request.getStatus();
+        }
+        var networks = JSON.parse(netResponse);
+
+        var data = [];
+        networks.forEach(function (net) {
+          var gpResponse = request.get(
+            url + "networks/" + encodeURIComponent(net.id) + "/groupPolicies",
+          );
+          if (request.getStatus() !== 200) {
+            return; // network doesn't support group policies (e.g. no eligible product) — skip it
+          }
+          var policies = JSON.parse(gpResponse);
+          policies.forEach(function (gp) {
+            data.push({
+              "{#NETWORK_ID}": net.id,
+              "{#NETWORK_NAME}": net.name,
+              "{#GROUP_POLICY_ID}": gp.groupPolicyId,
+              "{#GROUP_POLICY_NAME}": gp.name,
+            });
+          });
+        });
+
+        return JSON.stringify({ data: data });
+      parameters:
+      - name: httpproxy
+        value: '{$MERAKI.HTTP_PROXY}'
+      - name: orgid
+        value: '{$MERAKI.ORG.ID}'
+      - name: token
+        value: '{$MERAKI.TOKEN}'
+      - name: url
+        value: '{$MERAKI.API.URL}'
+      item_prototypes:
+      - uuid: 4aebc7c707fb49508681476d61181ad8
+        name: 'Client group policy: {#GROUP_POLICY_NAME} on {#NETWORK_NAME}'
+        type: SCRIPT
+        key: meraki.clientgroup.detail[{#NETWORK_ID},{#GROUP_POLICY_ID}]
+        delay: '{$MERAKI.LLD.INTERVAL}'
+        timeout: '{$MERAKI.DATA.TIMEOUT}'
+        value_type: TEXT
+        history: '0'
+        params: |
+          var params = JSON.parse(value);
+
+          var request = new HttpRequest();
+          request.addHeader("X-Cisco-Meraki-API-Key:" + params.token);
+          request.addHeader("Content-Type: application/json");
+          request.addHeader("User-Agent: ZabbixServer/1.2 Zabbix");
+
+          if (typeof params.httpproxy !== "undefined" && params.httpproxy !== "") {
+            request.setProxy(params.httpproxy);
+          }
+
+          var url = params.url;
+          if (url.indexOf("http://") === -1 && url.indexOf("https://") === -1) {
+            url = "https://" + url;
+          }
+          if (url.slice(-1) !== "/") {
+            url = url + "/";
+          }
+
+          var error_msg = "";
+          var result = {};
+
+          try {
+            var response = request.get(
+              url +
+                "networks/" +
+                encodeURIComponent(params.networkid) +
+                "/groupPolicies/" +
+                encodeURIComponent(params.grouppolicyid),
+            );
+            if (request.getStatus() !== 200) {
+              throw "Failed to get group policy: status " + request.getStatus();
+            }
+            var gp = JSON.parse(response);
+            var limits =
+              gp.bandwidth && gp.bandwidth.bandwidthLimits
+                ? gp.bandwidth.bandwidthLimits
+                : {};
+            result = {
+              limitUpKbps: limits.limitUp != null ? limits.limitUp : 0,
+              limitDownKbps: limits.limitDown != null ? limits.limitDown : 0,
+            };
+          } catch (error) {
+            error_msg = error.toString();
+          }
+
+          return JSON.stringify({
+            result: result,
+            error: error_msg,
+          });
+        parameters:
+        - name: httpproxy
+          value: '{$MERAKI.HTTP_PROXY}'
+        - name: networkid
+          value: '{#NETWORK_ID}'
+        - name: grouppolicyid
+          value: '{#GROUP_POLICY_ID}'
+        - name: token
+          value: '{$MERAKI.TOKEN}'
+        - name: url
+          value: '{$MERAKI.API.URL}'
+        tags:
+        - tag: component
+          value: raw
+      - uuid: ae1ee7b41c5f4e51b7bc5a18c4e9f623
+        name: 'Bandwidth limit up: {#GROUP_POLICY_NAME} on {#NETWORK_NAME}'
+        type: DEPENDENT
+        key: meraki.clientgroup.bandwidth.up[{#NETWORK_ID},{#GROUP_POLICY_ID}]
+        value_type: FLOAT
+        units: Kbps
+        history: 31d
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.result.limitUpKbps
+          error_handler: DISCARD_VALUE
+        master_item:
+          key: meraki.clientgroup.detail[{#NETWORK_ID},{#GROUP_POLICY_ID}]
+        tags:
+        - tag: component
+          value: clientgroup
+      - uuid: 98b170ad808d48528be0e0a52503e13e
+        name: 'Bandwidth limit down: {#GROUP_POLICY_NAME} on {#NETWORK_NAME}'
+        type: DEPENDENT
+        key: meraki.clientgroup.bandwidth.down[{#NETWORK_ID},{#GROUP_POLICY_ID}]
+        value_type: FLOAT
+        units: Kbps
+        history: 31d
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.result.limitDownKbps
+          error_handler: DISCARD_VALUE
+        master_item:
+          key: meraki.clientgroup.detail[{#NETWORK_ID},{#GROUP_POLICY_ID}]
+        tags:
+        - tag: component
+          value: clientgroup
+    tags:
+    - tag: class
+      value: network
+    - tag: target
+      value: cisco-meraki-dashboard
+    macros:
+    - macro: '{$MERAKI.LLD.INTERVAL}'
+      value: 1h
+      description: Polling interval for all 4 discovery rules and the client-count-trend calculated item.
+    - macro: '{$MERAKI.CLIENTCOUNT.HIGH}'
+      value: '50'
+      description: Per-network client count above which the high-client-count trigger fires. Also used (x2) as part of the wireless-health-degraded condition.
+    - macro: '{$MERAKI.AUTHFAIL.HIGH}'
+      value: '20'
+      description: Per-network 1h auth-failure count above which the wireless-health-degraded trigger fires.
+    - macro: '{$MERAKI.AUTHFAIL.SSID.HIGH}'
+      value: '10'
+      description: Per-SSID 1h auth-failure count above which the authentication-failure-rate-high trigger fires.
+    - macro: '{$MERAKI.CLIENTCOUNT.TREND.THRESHOLD}'
+      value: '50'
+      description: Percent swing vs the 1h average client count that counts as abnormal.
+    - macro: '{$MERAKI.ORG.ID}'
+      value: CHANGE_IF_NEEDED
+      description: Meraki organization id used by all 4 discovery rules. Distinct from the device template's {$ORGANIZATION_ID} (auto-populated per host by the base template's Devices discovery LLD) -- this one is manually set once at the dashboard/org-host level, since this template is not attached to a per-device host.
