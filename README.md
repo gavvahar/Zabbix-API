@@ -7,7 +7,7 @@ Small collection of Python helpers for pulling data out of the [Zabbix API](http
 1. Install dependencies:
 
    ```bash
-   pip install -r requirements.txt
+   pip3 install -r requirements.txt
    ```
 
 2. Copy `.env.example` to `.env` and fill in your values:
