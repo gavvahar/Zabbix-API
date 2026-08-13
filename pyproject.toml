@@ -31,12 +31,12 @@ set_env = { VIRTUALENV_OVERRIDE_APP_DATA = "{work_dir}/.virtualenv" }
 [tool.tox.env."combined-imports-check"]
 skip_install = true
 deps = []
-commands = [["python3", "Python/scripts/combined_imports_check.py"]]
+commands = [["python3", "scripts/combined_imports_check.py"]]
 
 [tool.tox.env."no-classes-check"]
 skip_install = true
 deps = []
-commands = [["python3", "Python/scripts/no_classes_check.py"]]
+commands = [["python3", "scripts/no_classes_check.py"]]
 
 [tool.tox.env.prettier]
 skip_install = true
@@ -52,7 +52,7 @@ allowlist_externals = ["npx"]
 commands = [
   [
     "python3",
-    "Python/scripts/combined_imports_check.py",
+    "scripts/combined_imports_check.py",
     "--fix",
   ],
   [
