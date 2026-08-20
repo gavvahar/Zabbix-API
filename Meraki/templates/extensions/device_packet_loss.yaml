@@ -517,7 +517,7 @@ zabbix_export:
           pages:
             - name: "Meraki: Packet Loss"
               widgets:
-                - type: graph
+                - type: graphclassic
                   name: "Ping Latency"
                   width: "24"
                   height: "5"
@@ -530,7 +530,7 @@ zabbix_export:
                     - type: STRING
                       name: reference
                       value: AAAAA
-                - type: graph
+                - type: graphclassic
                   name: "Packet Loss %"
                   x: "24"
                   width: "24"
@@ -544,7 +544,7 @@ zabbix_export:
                     - type: STRING
                       name: reference
                       value: AAAAB
-                - type: graph
+                - type: graphclassic
                   name: "API Response Time"
                   x: "48"
                   width: "24"
@@ -562,7 +562,7 @@ zabbix_export:
     - uuid: 30c2c477913e4ab8a809b8ac2260b7db
       expression: '{$MERAKI.FIRMWARE.EXPECTED}<>"" and last(/Cisco Meraki device by HTTP/meraki.device.firmware)<>{$MERAKI.FIRMWARE.EXPECTED}'
       name: "Meraki: {HOST.NAME} firmware outdated (expected {$MERAKI.FIRMWARE.EXPECTED})"
-      priority: INFORMATION
+      priority: INFO
       description: "References the base template's own inherited Firmware item (meraki.device.firmware, CHAR) rather than duplicating it. Stays inactive while {$MERAKI.FIRMWARE.EXPECTED} is blank."
       tags:
         - tag: scope
