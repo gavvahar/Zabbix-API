@@ -606,6 +606,91 @@ zabbix_export:
               tags:
                 - tag: scope
                   value: performance
+          graph_prototypes:
+            - uuid: c7079aea70554545b65ff57c9ebc352c
+              name: "Network [{#NETWORK_NAME}]: Client Count"
+              ymin_type_1: FIXED
+              graph_items:
+                - color: 199C0D
+                  sortorder: "0"
+                  item:
+                    host: Cisco Meraki dashboard by HTTP - Wireless Health
+                    key: meraki.network.clientcount[{#NETWORK_ID}]
+                - color: 2774A4
+                  sortorder: "1"
+                  item:
+                    host: Cisco Meraki dashboard by HTTP - Wireless Health
+                    key: meraki.network.clientcount.trend[{#NETWORK_ID}]
+            - uuid: e17df035be81430aa29c398916f87272
+              name: "Network [{#NETWORK_NAME}]: Connection Success Rate"
+              ymin_type_1: FIXED
+              graph_items:
+                - color: 199C0D
+                  item:
+                    host: Cisco Meraki dashboard by HTTP - Wireless Health
+                    key: meraki.network.connections.successrate[{#NETWORK_ID}]
+            - uuid: 7e6d0d84a5544ab19e09f36c6bba8893
+              name: "Network [{#NETWORK_NAME}]: Latency by Traffic Class"
+              ymin_type_1: FIXED
+              graph_items:
+                - color: 199C0D
+                  sortorder: "0"
+                  item:
+                    host: Cisco Meraki dashboard by HTTP - Wireless Health
+                    key: meraki.network.latency.voice[{#NETWORK_ID}]
+                - color: 2774A4
+                  sortorder: "1"
+                  item:
+                    host: Cisco Meraki dashboard by HTTP - Wireless Health
+                    key: meraki.network.latency.video[{#NETWORK_ID}]
+                - color: F63100
+                  sortorder: "2"
+                  item:
+                    host: Cisco Meraki dashboard by HTTP - Wireless Health
+                    key: meraki.network.latency.besteffort[{#NETWORK_ID}]
+                - color: A54F10
+                  sortorder: "3"
+                  item:
+                    host: Cisco Meraki dashboard by HTTP - Wireless Health
+                    key: meraki.network.latency.background[{#NETWORK_ID}]
+            - uuid: 8b7c2fb4701245fd95f60c797cfaea65
+              name: "Network [{#NETWORK_NAME}]: Throughput"
+              ymin_type_1: FIXED
+              graph_items:
+                - color: 199C0D
+                  sortorder: "0"
+                  item:
+                    host: Cisco Meraki dashboard by HTTP - Wireless Health
+                    key: meraki.network.throughput.up[{#NETWORK_ID}]
+                - color: 2774A4
+                  sortorder: "1"
+                  item:
+                    host: Cisco Meraki dashboard by HTTP - Wireless Health
+                    key: meraki.network.throughput.down[{#NETWORK_ID}]
+                - color: F63100
+                  sortorder: "2"
+                  item:
+                    host: Cisco Meraki dashboard by HTTP - Wireless Health
+                    key: meraki.network.throughput.total[{#NETWORK_ID}]
+            - uuid: 08f4a4bbeeeb46dfac3cdbe40a978b01
+              name: "Network [{#NETWORK_NAME}]: Failures"
+              ymin_type_1: FIXED
+              graph_items:
+                - color: 199C0D
+                  sortorder: "0"
+                  item:
+                    host: Cisco Meraki dashboard by HTTP - Wireless Health
+                    key: meraki.network.authfailures[{#NETWORK_ID}]
+                - color: 2774A4
+                  sortorder: "1"
+                  item:
+                    host: Cisco Meraki dashboard by HTTP - Wireless Health
+                    key: meraki.network.dhcpfailures[{#NETWORK_ID}]
+                - color: F63100
+                  sortorder: "2"
+                  item:
+                    host: Cisco Meraki dashboard by HTTP - Wireless Health
+                    key: meraki.network.dnsfailures[{#NETWORK_ID}]
         - uuid: cbff2353c61e490ca77a859fb6976a32
           name: SSID Discovery
           type: SCRIPT
@@ -944,6 +1029,42 @@ zabbix_export:
               tags:
                 - tag: scope
                   value: performance
+          graph_prototypes:
+            - uuid: 84c27c3b90c7456b994bb39310152337
+              name: "SSID [{#SSID_NAME}]: Client Count"
+              ymin_type_1: FIXED
+              graph_items:
+                - color: 199C0D
+                  item:
+                    host: Cisco Meraki dashboard by HTTP - Wireless Health
+                    key: meraki.ssid.clientcount[{#NETWORK_ID},{#SSID_NUMBER}]
+            - uuid: ad117ea7358247dfb4ba2b0824b4dcc5
+              name: "SSID [{#SSID_NAME}]: Connection Success Rate"
+              ymin_type_1: FIXED
+              graph_items:
+                - color: 199C0D
+                  item:
+                    host: Cisco Meraki dashboard by HTTP - Wireless Health
+                    key: meraki.ssid.connections.successrate[{#NETWORK_ID},{#SSID_NUMBER}]
+            - uuid: d8e61d128852482fabaa4ada4e84249a
+              name: "SSID [{#SSID_NAME}]: Failures"
+              ymin_type_1: FIXED
+              graph_items:
+                - color: 199C0D
+                  sortorder: "0"
+                  item:
+                    host: Cisco Meraki dashboard by HTTP - Wireless Health
+                    key: meraki.ssid.authfailures[{#NETWORK_ID},{#SSID_NUMBER}]
+                - color: 2774A4
+                  sortorder: "1"
+                  item:
+                    host: Cisco Meraki dashboard by HTTP - Wireless Health
+                    key: meraki.ssid.dhcpfailures[{#NETWORK_ID},{#SSID_NUMBER}]
+                - color: F63100
+                  sortorder: "2"
+                  item:
+                    host: Cisco Meraki dashboard by HTTP - Wireless Health
+                    key: meraki.ssid.dnsfailures[{#NETWORK_ID},{#SSID_NUMBER}]
         - uuid: 18d535fba3ed4588a07c048d5bd5c985
           name: Radio Discovery
           type: SCRIPT
@@ -1275,6 +1396,15 @@ zabbix_export:
               tags:
                 - tag: component
                   value: radio
+          graph_prototypes:
+            - uuid: 3789b76ff3224eff9ae2b22bebdc23d3
+              name: "Radio [{#AP_NAME} {#RADIO_BAND}GHz radio {#RADIO_INDEX}]: Utilization"
+              ymin_type_1: FIXED
+              graph_items:
+                - color: 199C0D
+                  item:
+                    host: Cisco Meraki dashboard by HTTP - Wireless Health
+                    key: meraki.radio.utilization[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
         - uuid: e64fa924b80846109cc40b8da7d7f2c2
           name: Client Groups Discovery
           type: SCRIPT
@@ -1447,6 +1577,21 @@ zabbix_export:
               tags:
                 - tag: component
                   value: clientgroup
+          graph_prototypes:
+            - uuid: 609fd5d8381f434c84710cd93a020c5a
+              name: "Client Group [{#GROUP_POLICY_NAME}]: Bandwidth"
+              ymin_type_1: FIXED
+              graph_items:
+                - color: 199C0D
+                  sortorder: "0"
+                  item:
+                    host: Cisco Meraki dashboard by HTTP - Wireless Health
+                    key: meraki.clientgroup.bandwidth.up[{#NETWORK_ID},{#GROUP_POLICY_ID}]
+                - color: 2774A4
+                  sortorder: "1"
+                  item:
+                    host: Cisco Meraki dashboard by HTTP - Wireless Health
+                    key: meraki.clientgroup.bandwidth.down[{#NETWORK_ID},{#GROUP_POLICY_ID}]
       tags:
         - tag: class
           value: network
@@ -1471,3 +1616,182 @@ zabbix_export:
         - macro: "{$MERAKI.ORG.ID}"
           value: CHANGE_IF_NEEDED
           description: Meraki organization id used by all 4 discovery rules. Distinct from the device template's {$ORGANIZATION_ID} (auto-populated per host by the base template's Devices discovery LLD) -- this one is manually set once at the dashboard/org-host level, since this template is not attached to a per-device host.
+      dashboards:
+        - uuid: 2b36686a5e644c29ada99cf8ac22e6bf
+          name: "Meraki: Wireless Health"
+          pages:
+            - name: "Meraki: Networks"
+              widgets:
+                - type: graphprototype
+                  name: "Client Count"
+                  width: "36"
+                  height: "5"
+                  fields:
+                    - type: INTEGER
+                      name: columns
+                      value: "1"
+                    - type: GRAPH_PROTOTYPE
+                      name: graphid.0
+                      value:
+                        host: Cisco Meraki dashboard by HTTP - Wireless Health
+                        name: "Network [{#NETWORK_NAME}]: Client Count"
+                    - type: STRING
+                      name: reference
+                      value: AAAAA
+                - type: graphprototype
+                  name: "Connection Success Rate"
+                  x: "36"
+                  width: "36"
+                  height: "5"
+                  fields:
+                    - type: INTEGER
+                      name: columns
+                      value: "1"
+                    - type: GRAPH_PROTOTYPE
+                      name: graphid.0
+                      value:
+                        host: Cisco Meraki dashboard by HTTP - Wireless Health
+                        name: "Network [{#NETWORK_NAME}]: Connection Success Rate"
+                    - type: STRING
+                      name: reference
+                      value: AAAAB
+                - type: graphprototype
+                  name: "Latency by Traffic Class"
+                  y: "5"
+                  width: "36"
+                  height: "5"
+                  fields:
+                    - type: INTEGER
+                      name: columns
+                      value: "1"
+                    - type: GRAPH_PROTOTYPE
+                      name: graphid.0
+                      value:
+                        host: Cisco Meraki dashboard by HTTP - Wireless Health
+                        name: "Network [{#NETWORK_NAME}]: Latency by Traffic Class"
+                    - type: STRING
+                      name: reference
+                      value: AAAAC
+                - type: graphprototype
+                  name: "Throughput"
+                  x: "36"
+                  y: "5"
+                  width: "36"
+                  height: "5"
+                  fields:
+                    - type: INTEGER
+                      name: columns
+                      value: "1"
+                    - type: GRAPH_PROTOTYPE
+                      name: graphid.0
+                      value:
+                        host: Cisco Meraki dashboard by HTTP - Wireless Health
+                        name: "Network [{#NETWORK_NAME}]: Throughput"
+                    - type: STRING
+                      name: reference
+                      value: AAAAD
+                - type: graphprototype
+                  name: "Failures"
+                  y: "10"
+                  width: "36"
+                  height: "5"
+                  fields:
+                    - type: INTEGER
+                      name: columns
+                      value: "1"
+                    - type: GRAPH_PROTOTYPE
+                      name: graphid.0
+                      value:
+                        host: Cisco Meraki dashboard by HTTP - Wireless Health
+                        name: "Network [{#NETWORK_NAME}]: Failures"
+                    - type: STRING
+                      name: reference
+                      value: AAAAE
+            - name: "Meraki: SSIDs"
+              widgets:
+                - type: graphprototype
+                  name: "Client Count"
+                  width: "36"
+                  height: "5"
+                  fields:
+                    - type: INTEGER
+                      name: columns
+                      value: "1"
+                    - type: GRAPH_PROTOTYPE
+                      name: graphid.0
+                      value:
+                        host: Cisco Meraki dashboard by HTTP - Wireless Health
+                        name: "SSID [{#SSID_NAME}]: Client Count"
+                    - type: STRING
+                      name: reference
+                      value: AAAAA
+                - type: graphprototype
+                  name: "Connection Success Rate"
+                  x: "36"
+                  width: "36"
+                  height: "5"
+                  fields:
+                    - type: INTEGER
+                      name: columns
+                      value: "1"
+                    - type: GRAPH_PROTOTYPE
+                      name: graphid.0
+                      value:
+                        host: Cisco Meraki dashboard by HTTP - Wireless Health
+                        name: "SSID [{#SSID_NAME}]: Connection Success Rate"
+                    - type: STRING
+                      name: reference
+                      value: AAAAB
+                - type: graphprototype
+                  name: "Failures"
+                  y: "5"
+                  width: "36"
+                  height: "5"
+                  fields:
+                    - type: INTEGER
+                      name: columns
+                      value: "1"
+                    - type: GRAPH_PROTOTYPE
+                      name: graphid.0
+                      value:
+                        host: Cisco Meraki dashboard by HTTP - Wireless Health
+                        name: "SSID [{#SSID_NAME}]: Failures"
+                    - type: STRING
+                      name: reference
+                      value: AAAAC
+            - name: "Meraki: Radios"
+              widgets:
+                - type: graphprototype
+                  name: "Utilization"
+                  width: "36"
+                  height: "5"
+                  fields:
+                    - type: INTEGER
+                      name: columns
+                      value: "1"
+                    - type: GRAPH_PROTOTYPE
+                      name: graphid.0
+                      value:
+                        host: Cisco Meraki dashboard by HTTP - Wireless Health
+                        name: "Radio [{#AP_NAME} {#RADIO_BAND}GHz radio {#RADIO_INDEX}]: Utilization"
+                    - type: STRING
+                      name: reference
+                      value: AAAAA
+            - name: "Meraki: Client Groups"
+              widgets:
+                - type: graphprototype
+                  name: "Bandwidth"
+                  width: "36"
+                  height: "5"
+                  fields:
+                    - type: INTEGER
+                      name: columns
+                      value: "1"
+                    - type: GRAPH_PROTOTYPE
+                      name: graphid.0
+                      value:
+                        host: Cisco Meraki dashboard by HTTP - Wireless Health
+                        name: "Client Group [{#GROUP_POLICY_NAME}]: Bandwidth"
+                    - type: STRING
+                      name: reference
+                      value: AAAAA
