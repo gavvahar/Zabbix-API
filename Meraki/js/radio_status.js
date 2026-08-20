@@ -26,7 +26,7 @@ try {
       "organizations/" +
       encodeURIComponent(params.orgid) +
       "/wireless/ssids/statuses/byDevice?serials%5B%5D=" +
-      encodeURIComponent(params.serial),
+      encodeURIComponent(params.serial)
   );
   if (request.getStatus() !== 200) {
     throw "Failed to get radio status: status " + request.getStatus();

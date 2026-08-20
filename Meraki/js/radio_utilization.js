@@ -21,7 +21,7 @@ var response = request.get(
   url +
     "organizations/" +
     encodeURIComponent(params.orgid) +
-    "/wireless/devices/channelUtilization/byDevice?perPage=500",
+    "/wireless/devices/channelUtilization/byDevice?perPage=500"
 );
 if (request.getStatus() !== 200) {
   throw "Failed to list channel utilization: status " + request.getStatus();

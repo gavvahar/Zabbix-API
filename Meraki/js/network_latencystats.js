@@ -25,7 +25,7 @@ try {
     url +
       "networks/" +
       encodeURIComponent(params.networkid) +
-      "/wireless/latencyStats?timespan=3600",
+      "/wireless/latencyStats?timespan=3600"
   );
   if (request.getStatus() !== 200) {
     throw "Failed to get latency stats: status " + request.getStatus();

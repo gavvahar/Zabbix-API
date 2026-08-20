@@ -67,7 +67,7 @@ zabbix_export:
                   " ] Received response with status code " +
                   status +
                   ": " +
-                  response,
+                  response
               );
 
               var parsed = null;
@@ -249,11 +249,11 @@ zabbix_export:
             var error_msg = "";
             var result = {};
 
-            // Deliberately its own poller rather than reusing the base template's
-            // "Get status" item (meraki.device.get.status) as a master — that item's
-            // JSON shape is the base template's own and isn't ours to assume. This
-            // calls devices/statuses directly so the full shape (publicIp,
-            // lastReportedAt, productType) needed below is guaranteed.
+            // Deliberately its own poller rather than sharing meraki.device.get.status's
+            // master item — that item may be the official template's own poller (reused
+            // by resolve_device_status_item() to avoid a redundant one), whose JSON shape
+            // is narrower and isn't ours to assume. This calls devices/statuses directly
+            // so the full shape (publicIp, lastReportedAt, productType) is guaranteed.
             try {
               var statusUrl =
                 params.url +
@@ -276,7 +276,7 @@ zabbix_export:
               var networkName = "";
               if (device.networkId) {
                 var netResp = request.get(
-                  params.url + "networks/" + encodeURIComponent(device.networkId),
+                  params.url + "networks/" + encodeURIComponent(device.networkId)
                 );
                 if (request.getStatus() === 200) {
                   networkName = JSON.parse(netResp).name || "";
@@ -285,7 +285,7 @@ zabbix_export:
 
               var orgName = "";
               var orgResp = request.get(
-                params.url + "organizations/" + encodeURIComponent(params.orgid),
+                params.url + "organizations/" + encodeURIComponent(params.orgid)
               );
               if (request.getStatus() === 200) {
                 orgName = JSON.parse(orgResp).name || "";

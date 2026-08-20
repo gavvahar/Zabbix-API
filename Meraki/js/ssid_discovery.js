@@ -18,7 +18,7 @@ if (url.slice(-1) !== "/") {
 }
 
 var netResponse = request.get(
-  url + "organizations/" + encodeURIComponent(params.orgid) + "/networks",
+  url + "organizations/" + encodeURIComponent(params.orgid) + "/networks"
 );
 if (request.getStatus() !== 200) {
   throw "Failed to list networks: status " + request.getStatus();
@@ -29,7 +29,7 @@ var data = [];
 var failures = [];
 networks.forEach(function (net) {
   var ssidResponse = request.get(
-    url + "networks/" + encodeURIComponent(net.id) + "/wireless/ssids",
+    url + "networks/" + encodeURIComponent(net.id) + "/wireless/ssids"
   );
   var status = request.getStatus();
   if (status !== 200) {
@@ -44,7 +44,7 @@ networks.forEach(function (net) {
         "): status " +
         status +
         " - " +
-        (ssidResponse || "").substring(0, 200),
+        (ssidResponse || "").substring(0, 200)
     );
     return;
   }

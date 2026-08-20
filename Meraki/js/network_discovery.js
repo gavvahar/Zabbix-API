@@ -18,7 +18,7 @@ if (url.slice(-1) !== "/") {
 }
 
 var response = request.get(
-  url + "organizations/" + encodeURIComponent(params.orgid) + "/networks",
+  url + "organizations/" + encodeURIComponent(params.orgid) + "/networks"
 );
 if (request.getStatus() !== 200) {
   throw "Failed to list networks: status " + request.getStatus();

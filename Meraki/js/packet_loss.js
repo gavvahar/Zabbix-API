@@ -41,7 +41,7 @@ function getHttpData(method, url, body) {
       " ] Received response with status code " +
       status +
       ": " +
-      response,
+      response
   );
 
   var parsed = null;

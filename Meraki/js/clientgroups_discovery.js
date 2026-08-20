@@ -18,7 +18,7 @@ if (url.slice(-1) !== "/") {
 }
 
 var netResponse = request.get(
-  url + "organizations/" + encodeURIComponent(params.orgid) + "/networks",
+  url + "organizations/" + encodeURIComponent(params.orgid) + "/networks"
 );
 if (request.getStatus() !== 200) {
   throw "Failed to list networks: status " + request.getStatus();
@@ -28,7 +28,7 @@ var networks = JSON.parse(netResponse);
 var data = [];
 networks.forEach(function (net) {
   var gpResponse = request.get(
-    url + "networks/" + encodeURIComponent(net.id) + "/groupPolicies",
+    url + "networks/" + encodeURIComponent(net.id) + "/groupPolicies"
   );
   if (request.getStatus() !== 200) {
     return; // network doesn't support group policies (e.g. no eligible product) — skip it

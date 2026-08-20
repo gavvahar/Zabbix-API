@@ -42,7 +42,7 @@ zabbix_export:
             }
 
             var response = request.get(
-              url + "organizations/" + encodeURIComponent(params.orgid) + "/networks",
+              url + "organizations/" + encodeURIComponent(params.orgid) + "/networks"
             );
             if (request.getStatus() !== 200) {
               throw "Failed to list networks: status " + request.getStatus();
@@ -91,7 +91,7 @@ zabbix_export:
                   url +
                     "networks/" +
                     encodeURIComponent(params.networkid) +
-                    "/clients?timespan=300",
+                    "/clients?timespan=300"
                 );
                 if (request.getStatus() !== 200) {
                   throw "Failed to list clients: status " + request.getStatus();
@@ -170,7 +170,7 @@ zabbix_export:
                   url +
                     "networks/" +
                     encodeURIComponent(params.networkid) +
-                    "/wireless/failedConnections?timespan=3600",
+                    "/wireless/failedConnections?timespan=3600"
                 );
                 if (request.getStatus() !== 200) {
                   throw "Failed to list failed connections: status " + request.getStatus();
@@ -228,7 +228,7 @@ zabbix_export:
                     url +
                       "networks/" +
                       encodeURIComponent(params.networkid) +
-                      "/wireless/connectionStats?timespan=3600",
+                      "/wireless/connectionStats?timespan=3600"
                   );
                   if (request.getStatus() !== 200) {
                     throw "Failed to get connection stats: status " + request.getStatus();
@@ -350,7 +350,7 @@ zabbix_export:
                     url +
                       "networks/" +
                       encodeURIComponent(params.networkid) +
-                      "/wireless/latencyStats?timespan=3600",
+                      "/wireless/latencyStats?timespan=3600"
                   );
                   if (request.getStatus() !== 200) {
                     throw "Failed to get latency stats: status " + request.getStatus();
@@ -498,7 +498,7 @@ zabbix_export:
                     url +
                       "networks/" +
                       encodeURIComponent(params.networkid) +
-                      "/clients?timespan=300",
+                      "/clients?timespan=300"
                   );
                   if (request.getStatus() !== 200) {
                     throw "Failed to list clients: status " + request.getStatus();
@@ -719,7 +719,7 @@ zabbix_export:
             }
 
             var netResponse = request.get(
-              url + "organizations/" + encodeURIComponent(params.orgid) + "/networks",
+              url + "organizations/" + encodeURIComponent(params.orgid) + "/networks"
             );
             if (request.getStatus() !== 200) {
               throw "Failed to list networks: status " + request.getStatus();
@@ -730,7 +730,7 @@ zabbix_export:
             var failures = [];
             networks.forEach(function (net) {
               var ssidResponse = request.get(
-                url + "networks/" + encodeURIComponent(net.id) + "/wireless/ssids",
+                url + "networks/" + encodeURIComponent(net.id) + "/wireless/ssids"
               );
               var status = request.getStatus();
               if (status !== 200) {
@@ -745,7 +745,7 @@ zabbix_export:
                     "): status " +
                     status +
                     " - " +
-                    (ssidResponse || "").substring(0, 200),
+                    (ssidResponse || "").substring(0, 200)
                 );
                 return;
               }
@@ -802,7 +802,7 @@ zabbix_export:
                     "networks/" +
                     encodeURIComponent(params.networkid) +
                     "/wireless/failedConnections?timespan=3600&ssidNumber=" +
-                    encodeURIComponent(params.ssidnumber),
+                    encodeURIComponent(params.ssidnumber)
                 );
                 if (request.getStatus() !== 200) {
                   throw "Failed to list failed connections: status " + request.getStatus();
@@ -866,7 +866,7 @@ zabbix_export:
                   url +
                     "networks/" +
                     encodeURIComponent(params.networkid) +
-                    "/clients?timespan=300",
+                    "/clients?timespan=300"
                 );
                 if (request.getStatus() !== 200) {
                   throw "Failed to list clients: status " + request.getStatus();
@@ -932,7 +932,7 @@ zabbix_export:
                       encodeURIComponent(params.networkid) +
                       "/wireless/ssids/" +
                       encodeURIComponent(params.ssidnumber) +
-                      "/connectionStats?timespan=3600",
+                      "/connectionStats?timespan=3600"
                   );
                   if (request.getStatus() !== 200) {
                     throw "Failed to get connection stats: status " + request.getStatus();
@@ -1101,7 +1101,7 @@ zabbix_export:
               url +
                 "organizations/" +
                 encodeURIComponent(params.orgid) +
-                "/wireless/ssids/statuses/byDevice?perPage=500",
+                "/wireless/ssids/statuses/byDevice?perPage=500"
             );
             if (request.getStatus() !== 200) {
               throw "Failed to list radio statuses: status " + request.getStatus();
@@ -1164,7 +1164,7 @@ zabbix_export:
                   url +
                     "organizations/" +
                     encodeURIComponent(params.orgid) +
-                    "/wireless/devices/channelUtilization/byDevice?perPage=500",
+                    "/wireless/devices/channelUtilization/byDevice?perPage=500"
                 );
                 if (request.getStatus() !== 200) {
                   throw "Failed to list channel utilization: status " + request.getStatus();
@@ -1246,7 +1246,7 @@ zabbix_export:
                       "organizations/" +
                       encodeURIComponent(params.orgid) +
                       "/wireless/ssids/statuses/byDevice?serials%5B%5D=" +
-                      encodeURIComponent(params.serial),
+                      encodeURIComponent(params.serial)
                   );
                   if (request.getStatus() !== 200) {
                     throw "Failed to get radio status: status " + request.getStatus();
@@ -1433,7 +1433,7 @@ zabbix_export:
             }
 
             var netResponse = request.get(
-              url + "organizations/" + encodeURIComponent(params.orgid) + "/networks",
+              url + "organizations/" + encodeURIComponent(params.orgid) + "/networks"
             );
             if (request.getStatus() !== 200) {
               throw "Failed to list networks: status " + request.getStatus();
@@ -1443,7 +1443,7 @@ zabbix_export:
             var data = [];
             networks.forEach(function (net) {
               var gpResponse = request.get(
-                url + "networks/" + encodeURIComponent(net.id) + "/groupPolicies",
+                url + "networks/" + encodeURIComponent(net.id) + "/groupPolicies"
               );
               if (request.getStatus() !== 200) {
                 return; // network doesn't support group policies (e.g. no eligible product) — skip it
@@ -1498,7 +1498,7 @@ zabbix_export:
                       "networks/" +
                       encodeURIComponent(params.networkid) +
                       "/groupPolicies/" +
-                      encodeURIComponent(params.grouppolicyid),
+                      encodeURIComponent(params.grouppolicyid)
                   );
                   if (request.getStatus() !== 200) {
                     throw "Failed to get group policy: status " + request.getStatus();

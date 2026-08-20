@@ -49,7 +49,7 @@ try {
   var networkName = "";
   if (device.networkId) {
     var netResp = request.get(
-      params.url + "networks/" + encodeURIComponent(device.networkId),
+      params.url + "networks/" + encodeURIComponent(device.networkId)
     );
     if (request.getStatus() === 200) {
       networkName = JSON.parse(netResp).name || "";
@@ -58,7 +58,7 @@ try {
 
   var orgName = "";
   var orgResp = request.get(
-    params.url + "organizations/" + encodeURIComponent(params.orgid),
+    params.url + "organizations/" + encodeURIComponent(params.orgid)
   );
   if (request.getStatus() === 200) {
     orgName = JSON.parse(orgResp).name || "";

@@ -26,7 +26,7 @@ var response = request.get(
   url +
     "organizations/" +
     encodeURIComponent(params.orgid) +
-    "/wireless/ssids/statuses/byDevice?perPage=500",
+    "/wireless/ssids/statuses/byDevice?perPage=500"
 );
 if (request.getStatus() !== 200) {
   throw "Failed to list radio statuses: status " + request.getStatus();
