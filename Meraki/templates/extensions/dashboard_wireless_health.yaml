@@ -10,19 +10,17 @@ zabbix_export:
       template: Cisco Meraki dashboard by HTTP - Wireless Health
       name: Cisco Meraki dashboard by HTTP - Wireless Health
       description: Extends the official "Cisco Meraki dashboard by HTTP" template (linked below, not duplicated) with per-network and per-SSID wireless health telemetry (client counts, auth failures, connection funnel stats, latency, throughput), per-radio channel/utilization data, and per-network-group bandwidth policy data, each via its own LLD rule. Attach this template instead of the base one; all of the base template's own items, triggers and discovery rules come along via the template link.
+      templates:
+        - name: Cisco Meraki dashboard by HTTP
       groups:
         - name: Templates/Applications
         - name: Templates/Network devices
-      templates:
-        - name: Cisco Meraki dashboard by HTTP
       discovery_rules:
         - uuid: 8c9d1195d535484b80d5677abf922f97
           name: Network Discovery
           type: SCRIPT
           key: meraki.lld.networks
           delay: "{$MERAKI.LLD.INTERVAL}"
-          timeout: "{$MERAKI.DATA.TIMEOUT}"
-          lifetime: 7d
           params: |
             var params = JSON.parse(value);
 
@@ -60,24 +58,15 @@ zabbix_export:
             });
 
             return JSON.stringify({ data: data });
-          parameters:
-            - name: httpproxy
-              value: "{$MERAKI.HTTP_PROXY}"
-            - name: orgid
-              value: "{$MERAKI.ORG.ID}"
-            - name: token
-              value: "{$MERAKI.TOKEN}"
-            - name: url
-              value: "{$MERAKI.API.URL}"
+          lifetime: 7d
           item_prototypes:
             - uuid: dfcae868f646436f8283af93a486befa
               name: "Client count: {#NETWORK_NAME}"
               type: SCRIPT
               key: meraki.network.clientcount[{#NETWORK_ID}]
               delay: "{$MERAKI.LLD.INTERVAL}"
-              timeout: "{$MERAKI.DATA.TIMEOUT}"
-              value_type: UNSIGNED
               history: 31d
+              value_type: UNSIGNED
               params: |
                 var params = JSON.parse(value);
 
@@ -109,6 +98,7 @@ zabbix_export:
                 }
 
                 return JSON.parse(response).length;
+              timeout: "{$MERAKI.DATA.TIMEOUT}"
               parameters:
                 - name: httpproxy
                   value: "{$MERAKI.HTTP_PROXY}"
@@ -121,26 +111,41 @@ zabbix_export:
               tags:
                 - tag: component
                   value: network
+              trigger_prototypes:
+                - uuid: c241afd21a664d60937a05f68da1b493
+                  expression: last(/Cisco Meraki dashboard by HTTP - Wireless Health/meraki.network.clientcount[{#NETWORK_ID}])>{$MERAKI.CLIENTCOUNT.HIGH}
+                  name: "Meraki: High client count on {#NETWORK_NAME}"
+                  priority: WARNING
+                  tags:
+                    - tag: scope
+                      value: performance
             - uuid: 6296a9001d2a4151a5eabf12c2df517d
               name: "Client count trend (vs 1h avg): {#NETWORK_NAME}"
               type: CALCULATED
               key: meraki.network.clientcount.trend[{#NETWORK_ID}]
               delay: "{$MERAKI.LLD.INTERVAL}"
+              history: 31d
               value_type: FLOAT
               units: "%"
-              history: 31d
               params: (last(//meraki.network.clientcount[{#NETWORK_ID}])-avg(//meraki.network.clientcount[{#NETWORK_ID}],1h))/(avg(//meraki.network.clientcount[{#NETWORK_ID}],1h)+0.001)*100
               tags:
                 - tag: component
                   value: network
+              trigger_prototypes:
+                - uuid: 21649a98aa6c485fad032b7591fda013
+                  expression: abs(last(/Cisco Meraki dashboard by HTTP - Wireless Health/meraki.network.clientcount.trend[{#NETWORK_ID}]))>{$MERAKI.CLIENTCOUNT.TREND.THRESHOLD}
+                  name: "Meraki: Client count trend abnormal on {#NETWORK_NAME}"
+                  priority: WARNING
+                  tags:
+                    - tag: scope
+                      value: performance
             - uuid: d224c6f997424b429c11ed8208efd3ed
               name: "Auth failures (1h): {#NETWORK_NAME}"
               type: SCRIPT
               key: meraki.network.authfailures[{#NETWORK_ID}]
               delay: "{$MERAKI.LLD.INTERVAL}"
-              timeout: "{$MERAKI.DATA.TIMEOUT}"
-              value_type: UNSIGNED
               history: 31d
+              value_type: UNSIGNED
               params: |
                 var params = JSON.parse(value);
 
@@ -175,6 +180,7 @@ zabbix_export:
                 return events.filter(function (e) {
                   return e.type === "auth";
                 }).length;
+              timeout: "{$MERAKI.DATA.TIMEOUT}"
               parameters:
                 - name: httpproxy
                   value: "{$MERAKI.HTTP_PROXY}"
@@ -192,9 +198,8 @@ zabbix_export:
               type: SCRIPT
               key: meraki.network.connectionstats[{#NETWORK_ID}]
               delay: "{$MERAKI.LLD.INTERVAL}"
-              timeout: "{$MERAKI.DATA.TIMEOUT}"
-              value_type: TEXT
               history: "0"
+              value_type: TEXT
               params: |
                 var params = JSON.parse(value);
 
@@ -248,6 +253,7 @@ zabbix_export:
                   result: result,
                   error: error_msg,
                 });
+              timeout: "{$MERAKI.DATA.TIMEOUT}"
               parameters:
                 - name: httpproxy
                   value: "{$MERAKI.HTTP_PROXY}"
@@ -264,8 +270,8 @@ zabbix_export:
               name: "DHCP failures (1h): {#NETWORK_NAME}"
               type: DEPENDENT
               key: meraki.network.dhcpfailures[{#NETWORK_ID}]
-              value_type: UNSIGNED
               history: 31d
+              value_type: UNSIGNED
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -280,8 +286,8 @@ zabbix_export:
               name: "DNS failures (1h): {#NETWORK_NAME}"
               type: DEPENDENT
               key: meraki.network.dnsfailures[{#NETWORK_ID}]
-              value_type: UNSIGNED
               history: 31d
+              value_type: UNSIGNED
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -296,9 +302,9 @@ zabbix_export:
               name: "Connection success rate (1h): {#NETWORK_NAME}"
               type: DEPENDENT
               key: meraki.network.connections.successrate[{#NETWORK_ID}]
+              history: 31d
               value_type: FLOAT
               units: "%"
-              history: 31d
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -314,9 +320,8 @@ zabbix_export:
               type: SCRIPT
               key: meraki.network.latencystats[{#NETWORK_ID}]
               delay: "{$MERAKI.LLD.INTERVAL}"
-              timeout: "{$MERAKI.DATA.TIMEOUT}"
-              value_type: TEXT
               history: "0"
+              value_type: TEXT
               params: |
                 var params = JSON.parse(value);
 
@@ -377,6 +382,7 @@ zabbix_export:
                   result: result,
                   error: error_msg,
                 });
+              timeout: "{$MERAKI.DATA.TIMEOUT}"
               parameters:
                 - name: httpproxy
                   value: "{$MERAKI.HTTP_PROXY}"
@@ -393,9 +399,9 @@ zabbix_export:
               name: "Voice latency (1h): {#NETWORK_NAME}"
               type: DEPENDENT
               key: meraki.network.latency.voice[{#NETWORK_ID}]
+              history: 31d
               value_type: FLOAT
               units: ms
-              history: 31d
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -410,9 +416,9 @@ zabbix_export:
               name: "Video latency (1h): {#NETWORK_NAME}"
               type: DEPENDENT
               key: meraki.network.latency.video[{#NETWORK_ID}]
+              history: 31d
               value_type: FLOAT
               units: ms
-              history: 31d
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -427,9 +433,9 @@ zabbix_export:
               name: "Best effort latency (1h): {#NETWORK_NAME}"
               type: DEPENDENT
               key: meraki.network.latency.besteffort[{#NETWORK_ID}]
+              history: 31d
               value_type: FLOAT
               units: ms
-              history: 31d
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -444,9 +450,9 @@ zabbix_export:
               name: "Background latency (1h): {#NETWORK_NAME}"
               type: DEPENDENT
               key: meraki.network.latency.background[{#NETWORK_ID}]
+              history: 31d
               value_type: FLOAT
               units: ms
-              history: 31d
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -462,9 +468,8 @@ zabbix_export:
               type: SCRIPT
               key: meraki.network.usage[{#NETWORK_ID}]
               delay: "{$MERAKI.LLD.INTERVAL}"
-              timeout: "{$MERAKI.DATA.TIMEOUT}"
-              value_type: TEXT
               history: "0"
+              value_type: TEXT
               params: |
                 var params = JSON.parse(value);
 
@@ -521,6 +526,7 @@ zabbix_export:
                   result: result,
                   error: error_msg,
                 });
+              timeout: "{$MERAKI.DATA.TIMEOUT}"
               parameters:
                 - name: httpproxy
                   value: "{$MERAKI.HTTP_PROXY}"
@@ -537,9 +543,9 @@ zabbix_export:
               name: "Upload throughput: {#NETWORK_NAME}"
               type: DEPENDENT
               key: meraki.network.throughput.up[{#NETWORK_ID}]
+              history: 31d
               value_type: FLOAT
               units: Kbps
-              history: 31d
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -554,9 +560,9 @@ zabbix_export:
               name: "Download throughput: {#NETWORK_NAME}"
               type: DEPENDENT
               key: meraki.network.throughput.down[{#NETWORK_ID}]
+              history: 31d
               value_type: FLOAT
               units: Kbps
-              history: 31d
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -571,9 +577,9 @@ zabbix_export:
               name: "Total wireless usage: {#NETWORK_NAME}"
               type: DEPENDENT
               key: meraki.network.throughput.total[{#NETWORK_ID}]
+              history: 31d
               value_type: FLOAT
               units: Kbps
-              history: 31d
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -585,20 +591,6 @@ zabbix_export:
                 - tag: component
                   value: network
           trigger_prototypes:
-            - uuid: 21649a98aa6c485fad032b7591fda013
-              expression: abs(last(/Cisco Meraki dashboard by HTTP - Wireless Health/meraki.network.clientcount.trend[{#NETWORK_ID}]))>{$MERAKI.CLIENTCOUNT.TREND.THRESHOLD}
-              name: "Meraki: Client count trend abnormal on {#NETWORK_NAME}"
-              priority: WARNING
-              tags:
-                - tag: scope
-                  value: performance
-            - uuid: c241afd21a664d60937a05f68da1b493
-              expression: last(/Cisco Meraki dashboard by HTTP - Wireless Health/meraki.network.clientcount[{#NETWORK_ID}])>{$MERAKI.CLIENTCOUNT.HIGH}
-              name: "Meraki: High client count on {#NETWORK_NAME}"
-              priority: WARNING
-              tags:
-                - tag: scope
-                  value: performance
             - uuid: 277545725a174a40b43b07dde7eda635
               expression: last(/Cisco Meraki dashboard by HTTP - Wireless Health/meraki.network.authfailures[{#NETWORK_ID}])>{$MERAKI.AUTHFAIL.HIGH} or last(/Cisco Meraki dashboard by HTTP - Wireless Health/meraki.network.clientcount[{#NETWORK_ID}])>({$MERAKI.CLIENTCOUNT.HIGH}*2)
               name: "Meraki: Wireless health degraded on {#NETWORK_NAME}"
@@ -611,13 +603,13 @@ zabbix_export:
               name: "Network [{#NETWORK_NAME}]: Client Count"
               ymin_type_1: FIXED
               graph_items:
-                - color: 199C0D
-                  sortorder: "0"
+                - sortorder: "0"
+                  color: 199C0D
                   item:
                     host: Cisco Meraki dashboard by HTTP - Wireless Health
                     key: meraki.network.clientcount[{#NETWORK_ID}]
-                - color: 2774A4
-                  sortorder: "1"
+                - sortorder: "1"
+                  color: 2774A4
                   item:
                     host: Cisco Meraki dashboard by HTTP - Wireless Health
                     key: meraki.network.clientcount.trend[{#NETWORK_ID}]
@@ -633,23 +625,23 @@ zabbix_export:
               name: "Network [{#NETWORK_NAME}]: Latency by Traffic Class"
               ymin_type_1: FIXED
               graph_items:
-                - color: 199C0D
-                  sortorder: "0"
+                - sortorder: "0"
+                  color: 199C0D
                   item:
                     host: Cisco Meraki dashboard by HTTP - Wireless Health
                     key: meraki.network.latency.voice[{#NETWORK_ID}]
-                - color: 2774A4
-                  sortorder: "1"
+                - sortorder: "1"
+                  color: 2774A4
                   item:
                     host: Cisco Meraki dashboard by HTTP - Wireless Health
                     key: meraki.network.latency.video[{#NETWORK_ID}]
-                - color: F63100
-                  sortorder: "2"
+                - sortorder: "2"
+                  color: F63100
                   item:
                     host: Cisco Meraki dashboard by HTTP - Wireless Health
                     key: meraki.network.latency.besteffort[{#NETWORK_ID}]
-                - color: A54F10
-                  sortorder: "3"
+                - sortorder: "3"
+                  color: A54F10
                   item:
                     host: Cisco Meraki dashboard by HTTP - Wireless Health
                     key: meraki.network.latency.background[{#NETWORK_ID}]
@@ -657,18 +649,18 @@ zabbix_export:
               name: "Network [{#NETWORK_NAME}]: Throughput"
               ymin_type_1: FIXED
               graph_items:
-                - color: 199C0D
-                  sortorder: "0"
+                - sortorder: "0"
+                  color: 199C0D
                   item:
                     host: Cisco Meraki dashboard by HTTP - Wireless Health
                     key: meraki.network.throughput.up[{#NETWORK_ID}]
-                - color: 2774A4
-                  sortorder: "1"
+                - sortorder: "1"
+                  color: 2774A4
                   item:
                     host: Cisco Meraki dashboard by HTTP - Wireless Health
                     key: meraki.network.throughput.down[{#NETWORK_ID}]
-                - color: F63100
-                  sortorder: "2"
+                - sortorder: "2"
+                  color: F63100
                   item:
                     host: Cisco Meraki dashboard by HTTP - Wireless Health
                     key: meraki.network.throughput.total[{#NETWORK_ID}]
@@ -676,28 +668,36 @@ zabbix_export:
               name: "Network [{#NETWORK_NAME}]: Failures"
               ymin_type_1: FIXED
               graph_items:
-                - color: 199C0D
-                  sortorder: "0"
+                - sortorder: "0"
+                  color: 199C0D
                   item:
                     host: Cisco Meraki dashboard by HTTP - Wireless Health
                     key: meraki.network.authfailures[{#NETWORK_ID}]
-                - color: 2774A4
-                  sortorder: "1"
+                - sortorder: "1"
+                  color: 2774A4
                   item:
                     host: Cisco Meraki dashboard by HTTP - Wireless Health
                     key: meraki.network.dhcpfailures[{#NETWORK_ID}]
-                - color: F63100
-                  sortorder: "2"
+                - sortorder: "2"
+                  color: F63100
                   item:
                     host: Cisco Meraki dashboard by HTTP - Wireless Health
                     key: meraki.network.dnsfailures[{#NETWORK_ID}]
+          timeout: "{$MERAKI.DATA.TIMEOUT}"
+          parameters:
+            - name: httpproxy
+              value: "{$MERAKI.HTTP_PROXY}"
+            - name: orgid
+              value: "{$MERAKI.ORG.ID}"
+            - name: token
+              value: "{$MERAKI.TOKEN}"
+            - name: url
+              value: "{$MERAKI.API.URL}"
         - uuid: cbff2353c61e490ca77a859fb6976a32
           name: SSID Discovery
           type: SCRIPT
           key: meraki.lld.ssids
           delay: "{$MERAKI.LLD.INTERVAL}"
-          timeout: "{$MERAKI.DATA.TIMEOUT}"
-          lifetime: 7d
           params: |
             var params = JSON.parse(value);
 
@@ -768,24 +768,15 @@ zabbix_export:
             }
 
             return JSON.stringify({ data: data });
-          parameters:
-            - name: httpproxy
-              value: "{$MERAKI.HTTP_PROXY}"
-            - name: orgid
-              value: "{$MERAKI.ORG.ID}"
-            - name: token
-              value: "{$MERAKI.TOKEN}"
-            - name: url
-              value: "{$MERAKI.API.URL}"
+          lifetime: 7d
           item_prototypes:
             - uuid: e395f1eee5d6434a923efdbeca54fa38
               name: "Auth failures (1h): {#SSID_NAME} on {#NETWORK_NAME}"
               type: SCRIPT
               key: meraki.ssid.authfailures[{#NETWORK_ID},{#SSID_NUMBER}]
               delay: "{$MERAKI.LLD.INTERVAL}"
-              timeout: "{$MERAKI.DATA.TIMEOUT}"
-              value_type: UNSIGNED
               history: 31d
+              value_type: UNSIGNED
               params: |
                 var params = JSON.parse(value);
 
@@ -821,6 +812,7 @@ zabbix_export:
                 return events.filter(function (e) {
                   return e.type === "auth";
                 }).length;
+              timeout: "{$MERAKI.DATA.TIMEOUT}"
               parameters:
                 - name: httpproxy
                   value: "{$MERAKI.HTTP_PROXY}"
@@ -835,14 +827,21 @@ zabbix_export:
               tags:
                 - tag: component
                   value: ssid
+              trigger_prototypes:
+                - uuid: b80fe98ec40844a88561c6db7282b666
+                  expression: last(/Cisco Meraki dashboard by HTTP - Wireless Health/meraki.ssid.authfailures[{#NETWORK_ID},{#SSID_NUMBER}])>{$MERAKI.AUTHFAIL.SSID.HIGH}
+                  name: "Meraki: Authentication failure rate high on {#SSID_NAME} ({#NETWORK_NAME})"
+                  priority: WARNING
+                  tags:
+                    - tag: scope
+                      value: performance
             - uuid: 7fda6436266849d98942c9af8c4f5316
               name: "Connected clients: {#SSID_NAME} on {#NETWORK_NAME}"
               type: SCRIPT
               key: meraki.ssid.clientcount[{#NETWORK_ID},{#SSID_NUMBER}]
               delay: "{$MERAKI.LLD.INTERVAL}"
-              timeout: "{$MERAKI.DATA.TIMEOUT}"
-              value_type: UNSIGNED
               history: 31d
+              value_type: UNSIGNED
               params: |
                 var params = JSON.parse(value);
 
@@ -881,6 +880,7 @@ zabbix_export:
                   }
                 });
                 return count;
+              timeout: "{$MERAKI.DATA.TIMEOUT}"
               parameters:
                 - name: httpproxy
                   value: "{$MERAKI.HTTP_PROXY}"
@@ -900,9 +900,8 @@ zabbix_export:
               type: SCRIPT
               key: meraki.ssid.connectionstats[{#NETWORK_ID},{#SSID_NUMBER}]
               delay: "{$MERAKI.LLD.INTERVAL}"
-              timeout: "{$MERAKI.DATA.TIMEOUT}"
-              value_type: TEXT
               history: "0"
+              value_type: TEXT
               params: |
                 var params = JSON.parse(value);
 
@@ -958,6 +957,7 @@ zabbix_export:
                   result: result,
                   error: error_msg,
                 });
+              timeout: "{$MERAKI.DATA.TIMEOUT}"
               parameters:
                 - name: httpproxy
                   value: "{$MERAKI.HTTP_PROXY}"
@@ -976,8 +976,8 @@ zabbix_export:
               name: "DHCP failures (1h): {#SSID_NAME} on {#NETWORK_NAME}"
               type: DEPENDENT
               key: meraki.ssid.dhcpfailures[{#NETWORK_ID},{#SSID_NUMBER}]
-              value_type: UNSIGNED
               history: 31d
+              value_type: UNSIGNED
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -992,8 +992,8 @@ zabbix_export:
               name: "DNS failures (1h): {#SSID_NAME} on {#NETWORK_NAME}"
               type: DEPENDENT
               key: meraki.ssid.dnsfailures[{#NETWORK_ID},{#SSID_NUMBER}]
-              value_type: UNSIGNED
               history: 31d
+              value_type: UNSIGNED
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -1008,9 +1008,9 @@ zabbix_export:
               name: "Connection success rate (1h): {#SSID_NAME} on {#NETWORK_NAME}"
               type: DEPENDENT
               key: meraki.ssid.connections.successrate[{#NETWORK_ID},{#SSID_NUMBER}]
+              history: 31d
               value_type: FLOAT
               units: "%"
-              history: 31d
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -1021,14 +1021,6 @@ zabbix_export:
               tags:
                 - tag: component
                   value: ssid
-          trigger_prototypes:
-            - uuid: b80fe98ec40844a88561c6db7282b666
-              expression: last(/Cisco Meraki dashboard by HTTP - Wireless Health/meraki.ssid.authfailures[{#NETWORK_ID},{#SSID_NUMBER}])>{$MERAKI.AUTHFAIL.SSID.HIGH}
-              name: "Meraki: Authentication failure rate high on {#SSID_NAME} ({#NETWORK_NAME})"
-              priority: WARNING
-              tags:
-                - tag: scope
-                  value: performance
           graph_prototypes:
             - uuid: 84c27c3b90c7456b994bb39310152337
               name: "SSID [{#SSID_NAME}]: Client Count"
@@ -1050,28 +1042,36 @@ zabbix_export:
               name: "SSID [{#SSID_NAME}]: Failures"
               ymin_type_1: FIXED
               graph_items:
-                - color: 199C0D
-                  sortorder: "0"
+                - sortorder: "0"
+                  color: 199C0D
                   item:
                     host: Cisco Meraki dashboard by HTTP - Wireless Health
                     key: meraki.ssid.authfailures[{#NETWORK_ID},{#SSID_NUMBER}]
-                - color: 2774A4
-                  sortorder: "1"
+                - sortorder: "1"
+                  color: 2774A4
                   item:
                     host: Cisco Meraki dashboard by HTTP - Wireless Health
                     key: meraki.ssid.dhcpfailures[{#NETWORK_ID},{#SSID_NUMBER}]
-                - color: F63100
-                  sortorder: "2"
+                - sortorder: "2"
+                  color: F63100
                   item:
                     host: Cisco Meraki dashboard by HTTP - Wireless Health
                     key: meraki.ssid.dnsfailures[{#NETWORK_ID},{#SSID_NUMBER}]
+          timeout: "{$MERAKI.DATA.TIMEOUT}"
+          parameters:
+            - name: httpproxy
+              value: "{$MERAKI.HTTP_PROXY}"
+            - name: orgid
+              value: "{$MERAKI.ORG.ID}"
+            - name: token
+              value: "{$MERAKI.TOKEN}"
+            - name: url
+              value: "{$MERAKI.API.URL}"
         - uuid: 18d535fba3ed4588a07c048d5bd5c985
           name: Radio Discovery
           type: SCRIPT
           key: meraki.lld.radios
           delay: "{$MERAKI.LLD.INTERVAL}"
-          timeout: "{$MERAKI.DATA.TIMEOUT}"
-          lifetime: 7d
           params: |
             var params = JSON.parse(value);
 
@@ -1130,25 +1130,16 @@ zabbix_export:
             });
 
             return JSON.stringify({ data: data });
-          parameters:
-            - name: httpproxy
-              value: "{$MERAKI.HTTP_PROXY}"
-            - name: orgid
-              value: "{$MERAKI.ORG.ID}"
-            - name: token
-              value: "{$MERAKI.TOKEN}"
-            - name: url
-              value: "{$MERAKI.API.URL}"
+          lifetime: 7d
           item_prototypes:
             - uuid: 398ab9d2dc484ecd90202e9e2fde12ef
               name: "Channel utilization: {#AP_NAME} ({#RADIO_BAND}GHz, radio {#RADIO_INDEX})"
               type: SCRIPT
               key: meraki.radio.utilization[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
               delay: "{$MERAKI.LLD.INTERVAL}"
-              timeout: "{$MERAKI.DATA.TIMEOUT}"
+              history: 31d
               value_type: FLOAT
               units: "%"
-              history: 31d
               params: |
                 var params = JSON.parse(value);
 
@@ -1202,6 +1193,7 @@ zabbix_export:
                 }
 
                 return band.utilization != null ? band.utilization : 0;
+              timeout: "{$MERAKI.DATA.TIMEOUT}"
               parameters:
                 - name: band
                   value: "{#RADIO_BAND}"
@@ -1223,9 +1215,8 @@ zabbix_export:
               type: SCRIPT
               key: meraki.radio.status[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
               delay: "{$MERAKI.LLD.INTERVAL}"
-              timeout: "{$MERAKI.DATA.TIMEOUT}"
-              value_type: TEXT
               history: "0"
+              value_type: TEXT
               params: |
                 var params = JSON.parse(value);
 
@@ -1299,6 +1290,7 @@ zabbix_export:
                   result: result,
                   error: error_msg,
                 });
+              timeout: "{$MERAKI.DATA.TIMEOUT}"
               parameters:
                 - name: httpproxy
                   value: "{$MERAKI.HTTP_PROXY}"
@@ -1317,8 +1309,8 @@ zabbix_export:
               name: "Channel: {#AP_NAME} ({#RADIO_BAND}GHz, radio {#RADIO_INDEX})"
               type: DEPENDENT
               key: meraki.radio.channel[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
-              value_type: UNSIGNED
               history: 31d
+              value_type: UNSIGNED
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -1333,9 +1325,9 @@ zabbix_export:
               name: "Channel width: {#AP_NAME} ({#RADIO_BAND}GHz, radio {#RADIO_INDEX})"
               type: DEPENDENT
               key: meraki.radio.channelwidth[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
+              history: 31d
               value_type: UNSIGNED
               units: MHz
-              history: 31d
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -1350,9 +1342,9 @@ zabbix_export:
               name: "TX power: {#AP_NAME} ({#RADIO_BAND}GHz, radio {#RADIO_INDEX})"
               type: DEPENDENT
               key: meraki.radio.power[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
+              history: 31d
               value_type: UNSIGNED
               units: dBm
-              history: 31d
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -1367,8 +1359,8 @@ zabbix_export:
               name: "Broadcasting: {#AP_NAME} ({#RADIO_BAND}GHz, radio {#RADIO_INDEX})"
               type: DEPENDENT
               key: meraki.radio.broadcasting[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
-              value_type: UNSIGNED
               history: 31d
+              value_type: UNSIGNED
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -1384,8 +1376,8 @@ zabbix_export:
               name: "SSIDs broadcasting: {#AP_NAME} ({#RADIO_BAND}GHz, radio {#RADIO_INDEX})"
               type: DEPENDENT
               key: meraki.radio.ssids[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
-              value_type: TEXT
               history: 31d
+              value_type: TEXT
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -1405,13 +1397,21 @@ zabbix_export:
                   item:
                     host: Cisco Meraki dashboard by HTTP - Wireless Health
                     key: meraki.radio.utilization[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
+          timeout: "{$MERAKI.DATA.TIMEOUT}"
+          parameters:
+            - name: httpproxy
+              value: "{$MERAKI.HTTP_PROXY}"
+            - name: orgid
+              value: "{$MERAKI.ORG.ID}"
+            - name: token
+              value: "{$MERAKI.TOKEN}"
+            - name: url
+              value: "{$MERAKI.API.URL}"
         - uuid: e64fa924b80846109cc40b8da7d7f2c2
           name: Client Groups Discovery
           type: SCRIPT
           key: meraki.lld.clientgroups
           delay: "{$MERAKI.LLD.INTERVAL}"
-          timeout: "{$MERAKI.DATA.TIMEOUT}"
-          lifetime: 7d
           params: |
             var params = JSON.parse(value);
 
@@ -1460,24 +1460,15 @@ zabbix_export:
             });
 
             return JSON.stringify({ data: data });
-          parameters:
-            - name: httpproxy
-              value: "{$MERAKI.HTTP_PROXY}"
-            - name: orgid
-              value: "{$MERAKI.ORG.ID}"
-            - name: token
-              value: "{$MERAKI.TOKEN}"
-            - name: url
-              value: "{$MERAKI.API.URL}"
+          lifetime: 7d
           item_prototypes:
             - uuid: 4aebc7c707fb49508681476d61181ad8
               name: "Client group policy: {#GROUP_POLICY_NAME} on {#NETWORK_NAME}"
               type: SCRIPT
               key: meraki.clientgroup.detail[{#NETWORK_ID},{#GROUP_POLICY_ID}]
               delay: "{$MERAKI.LLD.INTERVAL}"
-              timeout: "{$MERAKI.DATA.TIMEOUT}"
-              value_type: TEXT
               history: "0"
+              value_type: TEXT
               params: |
                 var params = JSON.parse(value);
 
@@ -1529,6 +1520,7 @@ zabbix_export:
                   result: result,
                   error: error_msg,
                 });
+              timeout: "{$MERAKI.DATA.TIMEOUT}"
               parameters:
                 - name: httpproxy
                   value: "{$MERAKI.HTTP_PROXY}"
@@ -1547,9 +1539,9 @@ zabbix_export:
               name: "Bandwidth limit up: {#GROUP_POLICY_NAME} on {#NETWORK_NAME}"
               type: DEPENDENT
               key: meraki.clientgroup.bandwidth.up[{#NETWORK_ID},{#GROUP_POLICY_ID}]
+              history: 31d
               value_type: FLOAT
               units: Kbps
-              history: 31d
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -1564,9 +1556,9 @@ zabbix_export:
               name: "Bandwidth limit down: {#GROUP_POLICY_NAME} on {#NETWORK_NAME}"
               type: DEPENDENT
               key: meraki.clientgroup.bandwidth.down[{#NETWORK_ID},{#GROUP_POLICY_ID}]
+              history: 31d
               value_type: FLOAT
               units: Kbps
-              history: 31d
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -1582,16 +1574,26 @@ zabbix_export:
               name: "Client Group [{#GROUP_POLICY_NAME}]: Bandwidth"
               ymin_type_1: FIXED
               graph_items:
-                - color: 199C0D
-                  sortorder: "0"
+                - sortorder: "0"
+                  color: 199C0D
                   item:
                     host: Cisco Meraki dashboard by HTTP - Wireless Health
                     key: meraki.clientgroup.bandwidth.up[{#NETWORK_ID},{#GROUP_POLICY_ID}]
-                - color: 2774A4
-                  sortorder: "1"
+                - sortorder: "1"
+                  color: 2774A4
                   item:
                     host: Cisco Meraki dashboard by HTTP - Wireless Health
                     key: meraki.clientgroup.bandwidth.down[{#NETWORK_ID},{#GROUP_POLICY_ID}]
+          timeout: "{$MERAKI.DATA.TIMEOUT}"
+          parameters:
+            - name: httpproxy
+              value: "{$MERAKI.HTTP_PROXY}"
+            - name: orgid
+              value: "{$MERAKI.ORG.ID}"
+            - name: token
+              value: "{$MERAKI.TOKEN}"
+            - name: url
+              value: "{$MERAKI.API.URL}"
       tags:
         - tag: class
           value: network
