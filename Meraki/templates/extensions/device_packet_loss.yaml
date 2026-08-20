@@ -500,6 +500,31 @@ zabbix_export:
           tags:
             - tag: scope
               value: performance
+      graphs:
+        - uuid: 3f60cfa4871344cf9871f2cf3f18e95c
+          name: "Meraki: Packet Loss - Ping Latency"
+          ymin_type_1: FIXED
+          graph_items:
+            - color: 199C0D
+              item:
+                host: Cisco Meraki device by HTTP - Packet Loss
+                key: meraki.device.ping.latency
+        - uuid: 90820c587ad147b6b84a2ce4797ca873
+          name: "Meraki: Packet Loss - Packet Loss %"
+          ymin_type_1: FIXED
+          graph_items:
+            - color: 199C0D
+              item:
+                host: Cisco Meraki device by HTTP - Packet Loss
+                key: meraki.device.packetloss.pct
+        - uuid: 5b86b3ac345e4d96a97cde74f1f3a993
+          name: "Meraki: Packet Loss - API Response Time"
+          ymin_type_1: FIXED
+          graph_items:
+            - color: 199C0D
+              item:
+                host: Cisco Meraki device by HTTP - Packet Loss
+                key: meraki.device.info.responsetime
       tags:
         - tag: class
           value: network
@@ -526,3 +551,50 @@ zabbix_export:
           description: "Polling interval for the Get device info script item."
         - macro: "{$MERAKI.FIRMWARE.EXPECTED}"
           description: "Expected firmware version. Leave blank to keep the firmware-outdated trigger inactive."
+      dashboards:
+        - uuid: f3647849a2b942eeb04bc6e9bebfc262
+          name: "Meraki: Packet Loss"
+          pages:
+            - name: "Meraki: Packet Loss"
+              widgets:
+                - type: graph
+                  name: "Ping Latency"
+                  width: "24"
+                  height: "5"
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: Cisco Meraki device by HTTP - Packet Loss
+                        name: "Meraki: Packet Loss - Ping Latency"
+                    - type: STRING
+                      name: reference
+                      value: AAAAA
+                - type: graph
+                  name: "Packet Loss %"
+                  x: "24"
+                  width: "24"
+                  height: "5"
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: Cisco Meraki device by HTTP - Packet Loss
+                        name: "Meraki: Packet Loss - Packet Loss %"
+                    - type: STRING
+                      name: reference
+                      value: AAAAB
+                - type: graph
+                  name: "API Response Time"
+                  x: "48"
+                  width: "24"
+                  height: "5"
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: Cisco Meraki device by HTTP - Packet Loss
+                        name: "Meraki: Packet Loss - API Response Time"
+                    - type: STRING
+                      name: reference
+                      value: AAAAC
