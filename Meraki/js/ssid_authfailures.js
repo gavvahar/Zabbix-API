@@ -22,7 +22,7 @@ var response = request.get(
     "networks/" +
     encodeURIComponent(params.networkid) +
     "/wireless/failedConnections?timespan=3600&ssidNumber=" +
-    encodeURIComponent(params.ssidnumber),
+    encodeURIComponent(params.ssidnumber)
 );
 if (request.getStatus() !== 200) {
   throw "Failed to list failed connections: status " + request.getStatus();

@@ -21,7 +21,7 @@ var response = request.get(
   url +
     "networks/" +
     encodeURIComponent(params.networkid) +
-    "/clients?timespan=300",
+    "/clients?timespan=300"
 );
 if (request.getStatus() !== 200) {
   throw "Failed to list clients: status " + request.getStatus();

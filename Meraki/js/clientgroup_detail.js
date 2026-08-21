@@ -26,7 +26,7 @@ try {
       "networks/" +
       encodeURIComponent(params.networkid) +
       "/groupPolicies/" +
-      encodeURIComponent(params.grouppolicyid),
+      encodeURIComponent(params.grouppolicyid)
   );
   if (request.getStatus() !== 200) {
     throw "Failed to get group policy: status " + request.getStatus();
