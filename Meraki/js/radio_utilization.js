@@ -49,4 +49,4 @@ if (band === null) {
   throw "No band data for " + params.band + " on " + params.serial;
 }
 
-return band.utilization != null ? band.utilization : 0;
+return band.total && band.total.percentage != null ? band.total.percentage : 0;
