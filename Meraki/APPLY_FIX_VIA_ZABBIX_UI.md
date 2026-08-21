@@ -58,7 +58,9 @@ every item it already created the next time that discovery rule runs.
    Replace it with:
 
    ```js
-   return band.total && band.total.percentage != null ? band.total.percentage : 0;
+   return band.total && band.total.percentage != null
+     ? band.total.percentage
+     : 0;
    ```
 
 5. **Apply**, then **Update**.

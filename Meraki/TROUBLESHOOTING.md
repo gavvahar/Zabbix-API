@@ -59,8 +59,8 @@ templates' embedded `params:` blocks.
 `"CHANGE_IF_NEEDED"` from the template default — never overridden after import. This is
 expected, not a bug: templates are declarative, linking one doesn't execute any code or
 call the Meraki API, so there's no way for Zabbix to auto-populate an org ID from an API
-key. (Contrast with `{$ORGANIZATION_ID}` on the *device* template, which the base
-template's own "Devices discovery" LLD rule *does* auto-populate — but only for hosts
+key. (Contrast with `{$ORGANIZATION_ID}` on the _device_ template, which the base
+template's own "Devices discovery" LLD rule _does_ auto-populate — but only for hosts
 that LLD itself creates, which the dashboard host isn't.)
 
 **Fix:** set `{$MERAKI.ORG.ID}` on the host to the real org ID (same value as
@@ -85,7 +85,7 @@ isn't a field in the real API response — the actual field is `band.total.perce
 Not the cause of any "Not supported" state (radio items that failed were failing because
 those specific device/band combos genuinely had no `byBand` entry in Meraki's response,
 which looks like real no-data rather than a bug), but it was silently returning `0`
-whenever data *did* exist.
+whenever data _did_ exist.
 
 **How it was found:** downloaded Meraki's official OpenAPI spec
 (`github.com/meraki/openapi`, `openapi/spec3.json`) and grepped it for every path
@@ -110,7 +110,7 @@ shapes instead of guessing.
   of the item's `History` setting.
 - **Forcing a discovery rule or item to run immediately** instead of waiting for its
   interval: select it in the list view and click **Execute now**. Note the displayed
-  `Not supported` status/error is sticky — it only updates on the *next* execution, so
+  `Not supported` status/error is sticky — it only updates on the _next_ execution, so
   after fixing something you need to Execute now (or wait out the interval) before the
   status will reflect the fix.
 - **Verifying a fix actually landed on the live instance** vs. just in the repo: open the
