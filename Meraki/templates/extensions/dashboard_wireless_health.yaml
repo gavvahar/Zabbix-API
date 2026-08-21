@@ -930,9 +930,8 @@ zabbix_export:
                     url +
                       "networks/" +
                       encodeURIComponent(params.networkid) +
-                      "/wireless/ssids/" +
-                      encodeURIComponent(params.ssidnumber) +
-                      "/connectionStats?timespan=3600"
+                      "/wireless/connectionStats?timespan=3600&ssid=" +
+                      encodeURIComponent(params.ssidnumber)
                   );
                   if (request.getStatus() !== 200) {
                     throw "Failed to get connection stats: status " + request.getStatus();
@@ -1192,7 +1191,7 @@ zabbix_export:
                   throw "No band data for " + params.band + " on " + params.serial;
                 }
 
-                return band.utilization != null ? band.utilization : 0;
+                return band.total && band.total.percentage != null ? band.total.percentage : 0;
               timeout: "{$MERAKI.DATA.TIMEOUT}"
               parameters:
                 - name: band

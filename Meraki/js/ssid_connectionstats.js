@@ -25,9 +25,8 @@ try {
     url +
       "networks/" +
       encodeURIComponent(params.networkid) +
-      "/wireless/ssids/" +
-      encodeURIComponent(params.ssidnumber) +
-      "/connectionStats?timespan=3600"
+      "/wireless/connectionStats?timespan=3600&ssid=" +
+      encodeURIComponent(params.ssidnumber)
   );
   if (request.getStatus() !== 200) {
     throw "Failed to get connection stats: status " + request.getStatus();
