@@ -485,12 +485,339 @@ zabbix_export:
           tags:
             - tag: component
               value: error
+        - uuid: 7817b9894f2e4e00beb672068a6755ad
+          name: Get inventory data
+          type: SCRIPT
+          key: meraki.get.inventory
+          delay: "{$MERAKI.GET.INVENTORY.INTERVAL}"
+          history: "0"
+          value_type: TEXT
+          params: |
+            var params = JSON.parse(value);
+
+            var request = new HttpRequest();
+            request.addHeader("X-Cisco-Meraki-API-Key:" + params.token);
+            request.addHeader("User-Agent: ZabbixServer/1.2 Zabbix");
+
+            function hasHeader(headers, name) {
+              if (typeof headers !== "object" || headers === null) {
+                return false;
+              }
+              var target = name.toLowerCase();
+              for (var key in headers) {
+                if (key.toLowerCase() === target) {
+                  return true;
+                }
+              }
+              return false;
+            }
+
+            function parseTime(timeString) {
+              var match = timeString.match(/^(\d+)([h|m|s])$/);
+              if (match) {
+                var value = parseInt(match[1], 10);
+                var unit = match[2];
+                switch (unit) {
+                  case "h":
+                    return value * 3600;
+                  case "m":
+                    return value * 60;
+                  case "s":
+                    return value;
+                  default:
+                    return 0;
+                }
+              }
+              return 0;
+            }
+
+            var response,
+              error_msg = "",
+              deviceInfo = [],
+              timespan;
+
+            function getHttpData(url) {
+              var startTime = new Date().getTime();
+              var maxWait = parseInt(timespan, 10) * 1000;
+              var waitFor = 1000;
+
+              while (true) {
+                response = request.get(url);
+                Zabbix.log(4, "[ Meraki API ] [ " + url + " ] Received response with status code " + request.getStatus() + ": " + response);
+
+                var status = request.getStatus();
+
+                if (response !== null) {
+                  try {
+                    response = JSON.parse(response);
+                  } catch (error) {
+                    throw "Failed to parse response received from Meraki API. Check debug log for more information.";
+                  }
+                }
+
+                if (status === 429 && response && response.errors && Array.isArray(response.errors) &&
+                  response.errors.indexOf("API rate limit exceeded for organization") !== -1) {
+                  var now = new Date().getTime();
+                  var headers = request.getHeaders(false);
+
+                  if (hasHeader(headers, "Retry-After")) {
+                    var retryAfter = headers["Retry-After"];
+                    Zabbix.log(4, "[ Meraki API ] API rate limit exceeded. Retrying after " + retryAfter + " seconds.");
+                    waitFor = parseInt(retryAfter) * 1000;
+                  } else {
+                    Zabbix.log(4, "[ Meraki API ] API rate limit exceeded. No Retry-After header. Retrying after 1 second.");
+                  }
+                  if (now - startTime + waitFor > maxWait) {
+                    throw "Failed to receive data: API rate limit exceeded and retry timeout reached.";
+                  }
+                  Zabbix.sleep(waitFor);
+                  continue;
+                }
+
+                if (status !== 200) {
+                  if (response.errors) {
+                    throw response.errors.join(", ");
+                  } else {
+                    throw "Failed to receive data: invalid response status code.";
+                  }
+                }
+
+                if (typeof response !== "object" || response === null) {
+                  throw "Cannot process response data: received data is not an object.";
+                }
+
+                return response;
+              }
+            }
+
+            try {
+              if (params.token === "{" + "$MERAKI.TOKEN}") {
+                throw "Please change {" + "$MERAKI.TOKEN} macro to the proper value.";
+              }
+              if (params.url.indexOf("http://") === -1 && params.url.indexOf("https://") === -1) {
+                params.url = "https://" + params.url;
+              }
+              if (!params.url.endsWith("/")) {
+                params.url += "/";
+              }
+              if (typeof params.httpproxy !== "undefined" && params.httpproxy !== "") {
+                request.setProxy(params.httpproxy);
+              }
+
+              timespan = parseTime("{$MERAKI.GET.INVENTORY.INTERVAL}");
+
+              deviceInfo = getHttpData(params.url + "organizations/" + encodeURIComponent(params.organizationId) + "/devices?serial=" + encodeURIComponent(params.serial));
+              deviceInfo = (deviceInfo && Array.isArray(deviceInfo) && deviceInfo.length > 0) ? deviceInfo[0] : [];
+              deviceInfo["ip"] = (typeof deviceInfo.lanIp !== "undefined") ? deviceInfo["lanIp"] : deviceInfo["wan1Ip"];
+            } catch (error) {
+              error_msg = error;
+            }
+
+            return JSON.stringify({
+              deviceInfo: deviceInfo,
+              error: error_msg.toString(),
+            });
+          description: "Pulls device inventory fields (address, firmware, GPS coordinates, MAC, model, notes, OS, serial number) via the official template's own Get inventory data script, retained here since the base template stays pinned to the older, currently-live Zabbix official revision. Deliberately excludes public IP -- already covered by Get device info's meraki.device.info.publicip above."
+          timeout: "{$MERAKI.DATA.TIMEOUT}"
+          parameters:
+            - name: httpproxy
+              value: "{$MERAKI.HTTP_PROXY}"
+            - name: organizationId
+              value: "{$ORGANIZATION_ID}"
+            - name: serial
+              value: "{$SERIAL}"
+            - name: token
+              value: "{$MERAKI.TOKEN}"
+            - name: url
+              value: "{$MERAKI.API.URL}"
+          tags:
+            - tag: component
+              value: raw
+        - uuid: 83b0413514574e58a3b5010777c87953
+          name: Device inventory data item errors
+          type: DEPENDENT
+          key: meraki.get.inventory.errors
+          history: 7d
+          value_type: TEXT
+          description: Item for gathering errors of the inventory data item.
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.error
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          master_item:
+            key: meraki.get.inventory
+          tags:
+            - tag: component
+              value: error
+          triggers:
+            - uuid: 10377dce5c1646ce8b8ade8b2071324b
+              expression: length(last(/Cisco Meraki device by HTTP - Packet Loss/meraki.get.inventory.errors))>0
+              name: "Meraki: There are errors in 'Get inventory data' metric"
+              priority: WARNING
+              tags:
+                - tag: scope
+                  value: availability
+        - uuid: 333b8cac842b4c2880a6e6365f18730a
+          name: Device address
+          type: DEPENDENT
+          key: meraki.device.address
+          value_type: TEXT
+          description: "Device location address. Network: {$NETWORK.ID}."
+          inventory_link: LOCATION
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.deviceInfo.address
+          master_item:
+            key: meraki.get.inventory
+          tags:
+            - tag: component
+              value: system
+        - uuid: 5c28052b16fe4292b41e1c1299b29347
+          name: Firmware
+          type: DEPENDENT
+          key: meraki.device.firmware
+          value_type: CHAR
+          description: "Device firmware. Network: {$NETWORK.ID}."
+          inventory_link: SOFTWARE
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.deviceInfo.firmware
+          master_item:
+            key: meraki.get.inventory
+          tags:
+            - tag: component
+              value: system
+        - uuid: f39036ae5155480db618a2ec71cf1d07
+          name: Device latitude
+          type: DEPENDENT
+          key: meraki.device.latitude
+          value_type: CHAR
+          description: "Latitude of the device location. Network: {$NETWORK.ID}."
+          inventory_link: LOCATION_LAT
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.deviceInfo.lat
+          master_item:
+            key: meraki.get.inventory
+          tags:
+            - tag: component
+              value: system
+        - uuid: 210b67e7ed564a01954b836dc35adc3e
+          name: Device longitude
+          type: DEPENDENT
+          key: meraki.device.longitude
+          value_type: CHAR
+          description: "Longitude of the device location. Network: {$NETWORK.ID}."
+          inventory_link: LOCATION_LON
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.deviceInfo.lng
+          master_item:
+            key: meraki.get.inventory
+          tags:
+            - tag: component
+              value: system
+        - uuid: 084fce9e15644f659565a0be96130f55
+          name: MAC address
+          type: DEPENDENT
+          key: meraki.device.mac.address
+          value_type: CHAR
+          description: "Device MAC address. Network: {$NETWORK.ID}."
+          inventory_link: MACADDRESS_A
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.deviceInfo.mac
+          master_item:
+            key: meraki.get.inventory
+          tags:
+            - tag: component
+              value: network
+        - uuid: d06ac76942854e7aa97f3c9706ee90f7
+          name: Device model
+          type: DEPENDENT
+          key: meraki.device.model
+          value_type: CHAR
+          description: "Device model. Network: {$NETWORK.ID}."
+          inventory_link: MODEL
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.deviceInfo.model
+          master_item:
+            key: meraki.get.inventory
+          tags:
+            - tag: component
+              value: system
+        - uuid: 4cac80cf0bf744bcaf9b107523bc2f53
+          name: Device notes
+          type: DEPENDENT
+          key: meraki.device.notes
+          value_type: TEXT
+          description: "Notes about the device. Network: {$NETWORK.ID}."
+          inventory_link: NOTES
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.deviceInfo.notes
+              error_handler: DISCARD_VALUE
+          master_item:
+            key: meraki.get.inventory
+          tags:
+            - tag: component
+              value: system
+        - uuid: 99ce0521637e4b8ebc1611152964bf64
+          name: Device OS
+          type: DEPENDENT
+          key: meraki.device.os
+          value_type: CHAR
+          description: "Device operating system. Network: {$NETWORK.ID}."
+          inventory_link: OS
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.deviceInfo.details[0].value
+              error_handler: DISCARD_VALUE
+          master_item:
+            key: meraki.get.inventory
+          tags:
+            - tag: component
+              value: system
+        - uuid: 1a88faee32854f26b13021ec59cf776a
+          name: Serial number
+          type: DEPENDENT
+          key: meraki.device.serialnumber
+          value_type: CHAR
+          description: "Device serial number. Network: {$NETWORK.ID}."
+          inventory_link: SERIALNO_A
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.deviceInfo.serial
+          master_item:
+            key: meraki.get.inventory
+          tags:
+            - tag: component
+              value: system
       tags:
         - tag: class
           value: network
         - tag: target
           value: cisco-meraki-dashboard
       macros:
+        - macro: "{$MERAKI.DATA.TIMEOUT}"
+          value: "60"
+          description: "Response timeout for the Meraki API script items in this template."
+        - macro: "{$MERAKI.GET.INVENTORY.INTERVAL}"
+          value: 12h
+          description: "Polling interval for the Get inventory data script item."
         - macro: "{$MERAKI.PING.COUNT}"
           value: "5"
           description: "Number of pings the Meraki live-ping-tool runs per packet-loss check."
