@@ -1022,7 +1022,7 @@ zabbix_export:
                   value: ssid
           graph_prototypes:
             - uuid: 84c27c3b90c7456b994bb39310152337
-              name: "SSID [{#SSID_NAME}]: Client Count"
+              name: "SSID [{#SSID_NAME}] on {#NETWORK_NAME}: Client Count"
               ymin_type_1: FIXED
               graph_items:
                 - color: 199C0D
@@ -1030,7 +1030,7 @@ zabbix_export:
                     host: Cisco Meraki dashboard by HTTP - Wireless Health
                     key: meraki.ssid.clientcount[{#NETWORK_ID},{#SSID_NUMBER}]
             - uuid: ad117ea7358247dfb4ba2b0824b4dcc5
-              name: "SSID [{#SSID_NAME}]: Connection Success Rate"
+              name: "SSID [{#SSID_NAME}] on {#NETWORK_NAME}: Connection Success Rate"
               ymin_type_1: FIXED
               graph_items:
                 - color: 199C0D
@@ -1038,7 +1038,7 @@ zabbix_export:
                     host: Cisco Meraki dashboard by HTTP - Wireless Health
                     key: meraki.ssid.connections.successrate[{#NETWORK_ID},{#SSID_NUMBER}]
             - uuid: d8e61d128852482fabaa4ada4e84249a
-              name: "SSID [{#SSID_NAME}]: Failures"
+              name: "SSID [{#SSID_NAME}] on {#NETWORK_NAME}: Failures"
               ymin_type_1: FIXED
               graph_items:
                 - sortorder: "0"
@@ -1599,6 +1599,9 @@ zabbix_export:
         - tag: target
           value: cisco-meraki-dashboard
       macros:
+        - macro: "{$MERAKI.DATA.TIMEOUT}"
+          value: "60"
+          description: Response timeout for the Meraki API script items in this template.
         - macro: "{$MERAKI.LLD.INTERVAL}"
           value: 1h
           description: Polling interval for all 4 discovery rules and the client-count-trend calculated item.
@@ -1722,7 +1725,7 @@ zabbix_export:
                       name: graphid.0
                       value:
                         host: Cisco Meraki dashboard by HTTP - Wireless Health
-                        name: "SSID [{#SSID_NAME}]: Client Count"
+                        name: "SSID [{#SSID_NAME}] on {#NETWORK_NAME}: Client Count"
                     - type: STRING
                       name: reference
                       value: AAAAA
@@ -1739,7 +1742,7 @@ zabbix_export:
                       name: graphid.0
                       value:
                         host: Cisco Meraki dashboard by HTTP - Wireless Health
-                        name: "SSID [{#SSID_NAME}]: Connection Success Rate"
+                        name: "SSID [{#SSID_NAME}] on {#NETWORK_NAME}: Connection Success Rate"
                     - type: STRING
                       name: reference
                       value: AAAAB
@@ -1756,7 +1759,7 @@ zabbix_export:
                       name: graphid.0
                       value:
                         host: Cisco Meraki dashboard by HTTP - Wireless Health
-                        name: "SSID [{#SSID_NAME}]: Failures"
+                        name: "SSID [{#SSID_NAME}] on {#NETWORK_NAME}: Failures"
                     - type: STRING
                       name: reference
                       value: AAAAC
