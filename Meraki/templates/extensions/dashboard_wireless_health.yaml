@@ -1642,6 +1642,9 @@ zabbix_export:
                     - type: STRING
                       name: reference
                       value: AAAAA
+                    - type: INTEGER
+                      name: show_legend
+                      value: "0"
                 - type: graphprototype
                   name: "Connection Success Rate"
                   x: "36"
