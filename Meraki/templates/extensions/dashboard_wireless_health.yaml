@@ -91,7 +91,7 @@ zabbix_export:
                   url +
                     "networks/" +
                     encodeURIComponent(params.networkid) +
-                    "/clients?timespan=300"
+                    "/clients?timespan=300&perPage=5000"
                 );
                 if (request.getStatus() !== 200) {
                   throw "Failed to list clients: status " + request.getStatus();
@@ -498,7 +498,7 @@ zabbix_export:
                     url +
                       "networks/" +
                       encodeURIComponent(params.networkid) +
-                      "/clients?timespan=300"
+                      "/clients?timespan=300&perPage=5000"
                   );
                   if (request.getStatus() !== 200) {
                     throw "Failed to list clients: status " + request.getStatus();
@@ -801,7 +801,7 @@ zabbix_export:
                   url +
                     "networks/" +
                     encodeURIComponent(params.networkid) +
-                    "/wireless/failedConnections?timespan=3600&ssidNumber=" +
+                    "/wireless/failedConnections?timespan=3600&ssid=" +
                     encodeURIComponent(params.ssidnumber)
                 );
                 if (request.getStatus() !== 200) {
@@ -866,7 +866,7 @@ zabbix_export:
                   url +
                     "networks/" +
                     encodeURIComponent(params.networkid) +
-                    "/clients?timespan=300"
+                    "/clients?timespan=300&perPage=5000"
                 );
                 if (request.getStatus() !== 200) {
                   throw "Failed to list clients: status " + request.getStatus();
@@ -1642,6 +1642,9 @@ zabbix_export:
                     - type: STRING
                       name: reference
                       value: AAAAA
+                    - type: INTEGER
+                      name: show_legend
+                      value: "0"
                 - type: graphprototype
                   name: "Connection Success Rate"
                   x: "36"
