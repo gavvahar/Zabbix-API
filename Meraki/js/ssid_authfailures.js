@@ -21,7 +21,7 @@ var response = request.get(
   url +
     "networks/" +
     encodeURIComponent(params.networkid) +
-    "/wireless/failedConnections?timespan=3600&ssidNumber=" +
+    "/wireless/failedConnections?timespan=3600&ssid=" +
     encodeURIComponent(params.ssidnumber)
 );
 if (request.getStatus() !== 200) {
