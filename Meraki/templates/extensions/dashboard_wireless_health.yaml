@@ -4823,7 +4823,7 @@ zabbix_export:
       dashboards:
         - uuid: 2b36686a5e644c29ada99cf8ac22e6bf
           name: "Meraki: Wireless Health"
-          auto_start: "0"
+          auto_start: "NO"
           pages:
             - name: "Meraki: Networks - All"
               widgets:
