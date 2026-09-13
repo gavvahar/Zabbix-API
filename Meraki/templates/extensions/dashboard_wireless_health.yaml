@@ -719,23 +719,17 @@ zabbix_export:
             }
 
             var response = request.get(
-              url + "organizations/" + encodeURIComponent(params.orgid) + "/networks"
+              url + "networks/" + encodeURIComponent(params.networkid)
             );
             if (request.getStatus() !== 200) {
-              throw "Failed to list networks: status " + request.getStatus();
+              throw "Failed to get network: status " + request.getStatus();
             }
 
-            var networks = JSON.parse(response);
-            var data = [];
-            networks.forEach(function (net) {
-              if (net.id !== params.networkid) {
-                return;
-              }
-              data.push({
-                "{#NETWORK_ID}": net.id,
-                "{#NETWORK_NAME}": net.name,
-              });
-            });
+            var net = JSON.parse(response);
+            var data = [{
+              "{#NETWORK_ID}": net.id,
+              "{#NETWORK_NAME}": net.name,
+            }];
 
             return JSON.stringify({ data: data });
           lifetime: 7d
@@ -1401,23 +1395,17 @@ zabbix_export:
             }
 
             var response = request.get(
-              url + "organizations/" + encodeURIComponent(params.orgid) + "/networks"
+              url + "networks/" + encodeURIComponent(params.networkid)
             );
             if (request.getStatus() !== 200) {
-              throw "Failed to list networks: status " + request.getStatus();
+              throw "Failed to get network: status " + request.getStatus();
             }
 
-            var networks = JSON.parse(response);
-            var data = [];
-            networks.forEach(function (net) {
-              if (net.id !== params.networkid) {
-                return;
-              }
-              data.push({
-                "{#NETWORK_ID}": net.id,
-                "{#NETWORK_NAME}": net.name,
-              });
-            });
+            var net = JSON.parse(response);
+            var data = [{
+              "{#NETWORK_ID}": net.id,
+              "{#NETWORK_NAME}": net.name,
+            }];
 
             return JSON.stringify({ data: data });
           lifetime: 7d
@@ -2456,56 +2444,33 @@ zabbix_export:
             }
 
             var netResponse = request.get(
-              url + "organizations/" + encodeURIComponent(params.orgid) + "/networks"
+              url + "networks/" + encodeURIComponent(params.networkid)
             );
             if (request.getStatus() !== 200) {
-              throw "Failed to list networks: status " + request.getStatus();
+              throw "Failed to get network: status " + request.getStatus();
             }
-            var networks = JSON.parse(netResponse);
+            var net = JSON.parse(netResponse);
+
+            var ssidResponse = request.get(
+              url + "networks/" + encodeURIComponent(net.id) + "/wireless/ssids"
+            );
+            if (request.getStatus() !== 200) {
+              throw "Failed to list SSIDs: status " + request.getStatus();
+            }
 
             var data = [];
-            var failures = [];
-            networks.forEach(function (net) {
-              if (net.id !== params.networkid) {
+            var ssids = JSON.parse(ssidResponse);
+            ssids.forEach(function (ssid) {
+              if (!ssid.enabled) {
                 return;
               }
-              var ssidResponse = request.get(
-                url + "networks/" + encodeURIComponent(net.id) + "/wireless/ssids"
-              );
-              var status = request.getStatus();
-              if (status !== 200) {
-                // Legitimately non-wireless networks (e.g. appliance-only) 404 here — that's
-                // fine to skip. But silently swallowing EVERY status code hides real failures
-                // (auth/permission errors, wrong path, etc.), so failures are collected and
-                // only ignored if at least one network came back with real SSID data.
-                failures.push(
-                  net.name +
-                    " (" +
-                    net.id +
-                    "): status " +
-                    status +
-                    " - " +
-                    (ssidResponse || "").substring(0, 200)
-                );
-                return;
-              }
-              var ssids = JSON.parse(ssidResponse);
-              ssids.forEach(function (ssid) {
-                if (!ssid.enabled) {
-                  return;
-                }
-                data.push({
-                  "{#NETWORK_ID}": net.id,
-                  "{#NETWORK_NAME}": net.name,
-                  "{#SSID_NUMBER}": ssid.number,
-                  "{#SSID_NAME}": ssid.name,
-                });
+              data.push({
+                "{#NETWORK_ID}": net.id,
+                "{#NETWORK_NAME}": net.name,
+                "{#SSID_NUMBER}": ssid.number,
+                "{#SSID_NAME}": ssid.name,
               });
             });
-
-            if (data.length === 0 && failures.length > 0) {
-              throw "No SSIDs found; per-network failures: " + failures.join(" | ");
-            }
 
             return JSON.stringify({ data: data });
           lifetime: 7d
@@ -2834,56 +2799,33 @@ zabbix_export:
             }
 
             var netResponse = request.get(
-              url + "organizations/" + encodeURIComponent(params.orgid) + "/networks"
+              url + "networks/" + encodeURIComponent(params.networkid)
             );
             if (request.getStatus() !== 200) {
-              throw "Failed to list networks: status " + request.getStatus();
+              throw "Failed to get network: status " + request.getStatus();
             }
-            var networks = JSON.parse(netResponse);
+            var net = JSON.parse(netResponse);
+
+            var ssidResponse = request.get(
+              url + "networks/" + encodeURIComponent(net.id) + "/wireless/ssids"
+            );
+            if (request.getStatus() !== 200) {
+              throw "Failed to list SSIDs: status " + request.getStatus();
+            }
 
             var data = [];
-            var failures = [];
-            networks.forEach(function (net) {
-              if (net.id !== params.networkid) {
+            var ssids = JSON.parse(ssidResponse);
+            ssids.forEach(function (ssid) {
+              if (!ssid.enabled) {
                 return;
               }
-              var ssidResponse = request.get(
-                url + "networks/" + encodeURIComponent(net.id) + "/wireless/ssids"
-              );
-              var status = request.getStatus();
-              if (status !== 200) {
-                // Legitimately non-wireless networks (e.g. appliance-only) 404 here — that's
-                // fine to skip. But silently swallowing EVERY status code hides real failures
-                // (auth/permission errors, wrong path, etc.), so failures are collected and
-                // only ignored if at least one network came back with real SSID data.
-                failures.push(
-                  net.name +
-                    " (" +
-                    net.id +
-                    "): status " +
-                    status +
-                    " - " +
-                    (ssidResponse || "").substring(0, 200)
-                );
-                return;
-              }
-              var ssids = JSON.parse(ssidResponse);
-              ssids.forEach(function (ssid) {
-                if (!ssid.enabled) {
-                  return;
-                }
-                data.push({
-                  "{#NETWORK_ID}": net.id,
-                  "{#NETWORK_NAME}": net.name,
-                  "{#SSID_NUMBER}": ssid.number,
-                  "{#SSID_NAME}": ssid.name,
-                });
+              data.push({
+                "{#NETWORK_ID}": net.id,
+                "{#NETWORK_NAME}": net.name,
+                "{#SSID_NUMBER}": ssid.number,
+                "{#SSID_NAME}": ssid.name,
               });
             });
-
-            if (data.length === 0 && failures.length > 0) {
-              throw "No SSIDs found; per-network failures: " + failures.join(" | ");
-            }
 
             return JSON.stringify({ data: data });
           lifetime: 7d
@@ -3560,7 +3502,8 @@ zabbix_export:
               url +
                 "organizations/" +
                 encodeURIComponent(params.orgid) +
-                "/wireless/ssids/statuses/byDevice?perPage=500"
+                "/wireless/ssids/statuses/byDevice?perPage=500&networkIds%5B%5D=" +
+                encodeURIComponent(params.networkid)
             );
             if (request.getStatus() !== 200) {
               throw "Failed to list radio statuses: status " + request.getStatus();
@@ -3570,9 +3513,6 @@ zabbix_export:
             var seen = {};
             var data = [];
             (result.items || []).forEach(function (device) {
-              if (!device.network || device.network.id !== params.networkid) {
-                return;
-              }
               (device.basicServiceSets || []).forEach(function (bss) {
                 if (!bss.radio) {
                   return;
@@ -3905,7 +3845,8 @@ zabbix_export:
               url +
                 "organizations/" +
                 encodeURIComponent(params.orgid) +
-                "/wireless/ssids/statuses/byDevice?perPage=500"
+                "/wireless/ssids/statuses/byDevice?perPage=500&networkIds%5B%5D=" +
+                encodeURIComponent(params.networkid)
             );
             if (request.getStatus() !== 200) {
               throw "Failed to list radio statuses: status " + request.getStatus();
@@ -3915,9 +3856,6 @@ zabbix_export:
             var seen = {};
             var data = [];
             (result.items || []).forEach(function (device) {
-              if (!device.network || device.network.id !== params.networkid) {
-                return;
-              }
               (device.basicServiceSets || []).forEach(function (bss) {
                 if (!bss.radio) {
                   return;
@@ -4429,24 +4367,18 @@ zabbix_export:
             }
 
             var netResponse = request.get(
-              url + "organizations/" + encodeURIComponent(params.orgid) + "/networks"
+              url + "networks/" + encodeURIComponent(params.networkid)
             );
             if (request.getStatus() !== 200) {
-              throw "Failed to list networks: status " + request.getStatus();
+              throw "Failed to get network: status " + request.getStatus();
             }
-            var networks = JSON.parse(netResponse);
+            var net = JSON.parse(netResponse);
 
             var data = [];
-            networks.forEach(function (net) {
-              if (net.id !== params.networkid) {
-                return;
-              }
-              var gpResponse = request.get(
-                url + "networks/" + encodeURIComponent(net.id) + "/groupPolicies"
-              );
-              if (request.getStatus() !== 200) {
-                return; // network doesn't support group policies (e.g. no eligible product) — skip it
-              }
+            var gpResponse = request.get(
+              url + "networks/" + encodeURIComponent(net.id) + "/groupPolicies"
+            );
+            if (request.getStatus() === 200) {
               var policies = JSON.parse(gpResponse);
               policies.forEach(function (gp) {
                 data.push({
@@ -4456,7 +4388,7 @@ zabbix_export:
                   "{#GROUP_POLICY_NAME}": gp.name,
                 });
               });
-            });
+            }
 
             return JSON.stringify({ data: data });
           lifetime: 7d
@@ -4621,24 +4553,18 @@ zabbix_export:
             }
 
             var netResponse = request.get(
-              url + "organizations/" + encodeURIComponent(params.orgid) + "/networks"
+              url + "networks/" + encodeURIComponent(params.networkid)
             );
             if (request.getStatus() !== 200) {
-              throw "Failed to list networks: status " + request.getStatus();
+              throw "Failed to get network: status " + request.getStatus();
             }
-            var networks = JSON.parse(netResponse);
+            var net = JSON.parse(netResponse);
 
             var data = [];
-            networks.forEach(function (net) {
-              if (net.id !== params.networkid) {
-                return;
-              }
-              var gpResponse = request.get(
-                url + "networks/" + encodeURIComponent(net.id) + "/groupPolicies"
-              );
-              if (request.getStatus() !== 200) {
-                return; // network doesn't support group policies (e.g. no eligible product) — skip it
-              }
+            var gpResponse = request.get(
+              url + "networks/" + encodeURIComponent(net.id) + "/groupPolicies"
+            );
+            if (request.getStatus() === 200) {
               var policies = JSON.parse(gpResponse);
               policies.forEach(function (gp) {
                 data.push({
@@ -4648,7 +4574,7 @@ zabbix_export:
                   "{#GROUP_POLICY_NAME}": gp.name,
                 });
               });
-            });
+            }
 
             return JSON.stringify({ data: data });
           lifetime: 7d
