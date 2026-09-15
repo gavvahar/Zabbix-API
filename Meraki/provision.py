@@ -11,6 +11,12 @@ Automates instructions.md plus the wireless-health follow-up list end to end:
   wireless    -> clones the dashboard template and adds Network/SSID/Radio
                  Discovery plus their trigger prototypes (High Client Count,
                  Authentication Failure Rate, Wireless Health Degraded)
+  resolve-networks -> one-time/on-demand: resolves {$MERAKI.NETWORK.ID.PLB}/
+                 {$MERAKI.NETWORK.ID.HYD} from human-readable network names
+                 (NETWORK_NAME_MACROS in config.py) via the Meraki API,
+                 instead of looking up and typing in network ids by hand.
+                 NOT part of `all` and not a recurring job -- see
+                 resolve_networks.py's module docstring.
   test        -> Step 6: force-run the packet loss item on one real host and
                  print the raw JSON, without ever re-typing the API token
   rollout     -> Step 7B: repoint the device-discovery host prototype at the
@@ -53,13 +59,14 @@ against production. Thresholds are placeholder macros (see
 config.py) — tune per your environment.
 
 Implementation is split across sibling modules:
-  config.py     env vars, template names, tuning macros
-  scripts.py    Zabbix Script item JavaScript bodies
-  api.py        Zabbix JSON-RPC wrapper + lookup helpers
-  create.py     `create` action
-  aphealth.py   `ap-health` action
-  wireless.py   `wireless` action
-  ops.py        `test` / `rollout` / `rollback` actions
+  config.py           env vars, template names, tuning macros
+  scripts.py          Zabbix Script item JavaScript bodies
+  api.py              Zabbix JSON-RPC wrapper + lookup helpers
+  create.py           `create` action
+  aphealth.py         `ap-health` action
+  wireless.py         `wireless` action
+  resolve_networks.py `resolve-networks` action
+  ops.py              `test` / `rollout` / `rollback` actions
 """
 
 import sys
@@ -67,6 +74,7 @@ import sys
 from create import main
 from aphealth import main_ap_health
 from wireless import create_wireless_health
+from resolve_networks import resolve_networks
 from ops import test_item, rollout, rollback
 
 
@@ -86,10 +94,13 @@ if __name__ == "__main__":
         "create": lambda: main(recreate),
         "ap-health": main_ap_health,
         "wireless": lambda: create_wireless_health(recreate),
+        "resolve-networks": resolve_networks,
         "test": test_item,
         "rollout": rollout,
         "rollback": rollback,
     }.get(
         action,
-        lambda: print("Usage: python provision.py [all|create|ap-health|wireless|test|rollout|rollback] [--recreate]"),
+        lambda: print(
+            "Usage: python provision.py [all|create|ap-health|wireless|resolve-networks|test|rollout|rollback] [--recreate]"
+        ),
     )()

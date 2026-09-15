@@ -133,3 +133,27 @@ def add_macros(templateid, macros):
             continue
         print(f"Adding macro {macro}")
         api_call("usermacro.create", {"hostid": templateid, "macro": macro, "value": value})
+
+
+def set_macro_value(templateid, macro, value):
+    """Set a single user macro's value on a template: update it if already
+    defined, or create it if missing. Unlike add_macros (create-only, used
+    for idempotent provisioning), this overwrites an existing value -- for
+    macros like {$MERAKI.NETWORK.ID.*} that start as a CHANGE_IF_NEEDED
+    placeholder (or a stale id from a previous run) and need a real value
+    written in.
+
+    Returns (old_value, new_value); old_value is None if the macro didn't
+    exist yet.
+    """
+    existing = api_call(
+        "usermacro.get",
+        {"hostids": [templateid], "filter": {"macro": [macro]}, "output": ["hostmacroid", "value"]},
+    )
+    if existing:
+        old_value = existing[0]["value"]
+        api_call("usermacro.update", {"hostmacroid": existing[0]["hostmacroid"], "value": value})
+    else:
+        old_value = None
+        api_call("usermacro.create", {"hostid": templateid, "macro": macro, "value": value})
+    return old_value, value

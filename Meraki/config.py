@@ -10,6 +10,11 @@ Environment variables (read from the repo-root .env, see .env.example):
                        Discovery and the AP-health status-poller fallback —
                        without it, every clone/recreate ships with a
                        CHANGE_IF_NEEDED placeholder that must be set by hand)
+  MERAKI_API_TOKEN    Meraki Dashboard API key (needed only by
+                       resolve_networks.py's `resolve-networks` action).
+                       Distinct from Zabbix's own {$MERAKI.TOKEN} template
+                       macro — this script talks to the Meraki API directly,
+                       outside Zabbix, like the rest of Meraki/*.py.
 """
 
 import os
@@ -22,6 +27,7 @@ ZABBIX_TOKEN = os.environ["ZABBIX_API_TOKEN"]
 ORG_HOST = os.environ.get("ZABBIX_ORG_HOST", "").strip()
 TEST_HOST = os.environ.get("ZABBIX_TEST_HOST", "").strip()
 MERAKI_ORG_ID = os.environ.get("MERAKI_ORG_ID", "").strip() or "CHANGE_IF_NEEDED"
+MERAKI_API_TOKEN = os.environ.get("MERAKI_API_TOKEN", "").strip()
 
 SOURCE_TEMPLATE = "Cisco Meraki device by HTTP"
 CLONE_TEMPLATE = "Cisco Meraki device by HTTP - Packet Loss"
@@ -53,6 +59,21 @@ DASHBOARD_MACROS = {
     "{$MERAKI.CLIENTCOUNT.TREND.THRESHOLD}": "50",  # % swing vs 1h avg that counts as abnormal
     "{$MERAKI.DATA.TIMEOUT}": "60",  # every discovery rule/item prototype in wireless.py uses this
     "{$MERAKI.ORG.ID}": MERAKI_ORG_ID,
+}
+
+# Human-readable Meraki network names, resolved to real network ids at
+# runtime by resolve_networks.py (`python provision.py resolve-networks`)
+# and written into the matching macro below on DASHBOARD_CLONE_TEMPLATE.
+#
+# NOT independently verified against a live Meraki API call — taken
+# directly from dashboard_wireless_health.yaml's own macro descriptions
+# ("Meraki network id for Connx PLB HQ" / "... Connx HYD HQ"). If either
+# name is wrong, resolve_networks.py errors out loudly (no match found)
+# rather than silently writing a bad id — that failure IS the real
+# verification step; update the values below if it fires.
+NETWORK_NAME_MACROS = {
+    "{$MERAKI.NETWORK.ID.PLB}": "Connx PLB HQ",
+    "{$MERAKI.NETWORK.ID.HYD}": "Connx HYD HQ",
 }
 
 TRIGGER_DESCRIPTION = "Meraki: Packet loss to {$MERAKI.PING.TARGET} > {$MERAKI.PING.LOSS}%"

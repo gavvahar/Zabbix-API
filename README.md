@@ -46,6 +46,7 @@ python provision.py all         # runs create, ap-health, and wireless in sequen
 python provision.py create      # clone the device template, add the packet loss item + trigger
 python provision.py ap-health   # extend the clone: device status, AP Down, Firmware Outdated, High Latency, API Failure
 python provision.py wireless    # clone the dashboard template, add Network/SSID/Radio discovery + triggers
+python provision.py resolve-networks  # resolve {$MERAKI.NETWORK.ID.PLB}/{$MERAKI.NETWORK.ID.HYD} from network names
 python provision.py test        # force-run the packet loss item on ZABBIX_TEST_HOST and print the raw result
 python provision.py rollout     # repoint the device-discovery host prototype at the clone (fleet-wide)
 python provision.py rollback    # undo rollout
@@ -53,12 +54,14 @@ python provision.py rollback    # undo rollout
 
 `test`, `rollout`, and `rollback` touch a real host or the fleet-wide discovery rule, so they're deliberately left out of `all` — run those one at a time.
 
+`resolve-networks` is also left out of `all` — it's a one-time (or on-demand) setup step, not a recurring job. It resolves the `{$MERAKI.NETWORK.ID.PLB}`/`{$MERAKI.NETWORK.ID.HYD}` macros on the dashboard clone from the human-readable network names in `config.py`'s `NETWORK_NAME_MACROS`, instead of looking up and typing in Meraki network ids by hand. A network's Meraki id never changes unless the network itself is deleted and recreated, so there's no benefit to re-running this on a schedule — only run it again if that happens. Requires `MERAKI_API_TOKEN` (see `.env.example`) in addition to `MERAKI_ORG_ID`.
+
 Requires Zabbix 6.4+ (Script item type, item-level timeout override, `task.create` check-now). The implementation is split across sibling modules in `Meraki/`:
 
 - `config.py` — env vars, template names, tuning macros.
 - `scripts.py` — the Zabbix Script item JavaScript bodies.
 - `api.py` — Zabbix JSON-RPC wrapper and shared lookup/template helpers.
-- `create.py`, `aphealth.py`, `wireless.py`, `ops.py` — one module per CLI action.
+- `create.py`, `aphealth.py`, `wireless.py`, `resolve_networks.py`, `ops.py` — one module per CLI action.
 
 ### Static templates
 
