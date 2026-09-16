@@ -3212,6 +3212,51 @@ zabbix_export:
                     - type: STRING
                       name: ds.0.items.0
                       value: "PLB - Connected clients: *"
+                    - type: STRING
+                      name: or.0.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.0.items.0
+                      value: "PLB - Connected clients: CONNX LAB on *"
+                    - type: STRING
+                      name: or.0.color
+                      value: "FFD54F"
+                    - type: STRING
+                      name: or.1.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.1.items.0
+                      value: "PLB - Connected clients: CONNX on *"
+                    - type: STRING
+                      name: or.1.color
+                      value: "0EC9AC"
+                    - type: STRING
+                      name: or.2.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.2.items.0
+                      value: "PLB - Connected clients: CONNX_S on *"
+                    - type: STRING
+                      name: or.2.color
+                      value: "524BBC"
+                    - type: STRING
+                      name: or.3.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.3.items.0
+                      value: "PLB - Connected clients: SMARTIMS on *"
+                    - type: STRING
+                      name: or.3.color
+                      value: "ED1248"
+                    - type: STRING
+                      name: or.4.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.4.items.0
+                      value: "PLB - Connected clients: SmartIMS | ConnX Guest on *"
+                    - type: STRING
+                      name: or.4.color
+                      value: "D1E754"
                     - type: INTEGER
                       name: ds.0.fill
                       value: "0"
@@ -3230,6 +3275,51 @@ zabbix_export:
                     - type: STRING
                       name: ds.0.items.0
                       value: "PLB - Connection success rate*"
+                    - type: STRING
+                      name: or.0.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.0.items.0
+                      value: "PLB - Connection success rate (1h): CONNX LAB on *"
+                    - type: STRING
+                      name: or.0.color
+                      value: "FFD54F"
+                    - type: STRING
+                      name: or.1.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.1.items.0
+                      value: "PLB - Connection success rate (1h): CONNX on *"
+                    - type: STRING
+                      name: or.1.color
+                      value: "0EC9AC"
+                    - type: STRING
+                      name: or.2.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.2.items.0
+                      value: "PLB - Connection success rate (1h): CONNX_S on *"
+                    - type: STRING
+                      name: or.2.color
+                      value: "524BBC"
+                    - type: STRING
+                      name: or.3.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.3.items.0
+                      value: "PLB - Connection success rate (1h): SMARTIMS on *"
+                    - type: STRING
+                      name: or.3.color
+                      value: "ED1248"
+                    - type: STRING
+                      name: or.4.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.4.items.0
+                      value: "PLB - Connection success rate (1h): SmartIMS | ConnX Guest on *"
+                    - type: STRING
+                      name: or.4.color
+                      value: "D1E754"
                     - type: INTEGER
                       name: ds.0.fill
                       value: "0"
@@ -3266,6 +3356,78 @@ zabbix_export:
                     - type: STRING
                       name: ds.0.items.0
                       value: "PLB - Channel utilization: *"
+                    - type: STRING
+                      name: or.0.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.0.items.0
+                      value: "PLB - Channel utilization: CONNX-PLB-AP1(TT)*"
+                    - type: STRING
+                      name: or.0.color
+                      value: "FFD54F"
+                    - type: STRING
+                      name: or.1.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.1.items.0
+                      value: "PLB - Channel utilization: CONNX-PLB-AP2(NOC)*"
+                    - type: STRING
+                      name: or.1.color
+                      value: "0EC9AC"
+                    - type: STRING
+                      name: or.2.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.2.items.0
+                      value: "PLB - Channel utilization: CONNX-PLB-AP3(REAR ENT)*"
+                    - type: STRING
+                      name: or.2.color
+                      value: "524BBC"
+                    - type: STRING
+                      name: or.3.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.3.items.0
+                      value: "PLB - Channel utilization: CONNX-PLB-AP4(LRG CONF)*"
+                    - type: STRING
+                      name: or.3.color
+                      value: "ED1248"
+                    - type: STRING
+                      name: or.4.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.4.items.0
+                      value: "PLB - Channel utilization: CONNX-PLB-AP5(IOT)*"
+                    - type: STRING
+                      name: or.4.color
+                      value: "D1E754"
+                    - type: STRING
+                      name: or.5.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.5.items.0
+                      value: "PLB - Channel utilization: CONNX-PLB-AP6 (BAY MID)*"
+                    - type: STRING
+                      name: or.5.color
+                      value: "2AB5FF"
+                    - type: STRING
+                      name: or.6.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.6.items.0
+                      value: "PLB - Channel utilization: CONNX-PLB-AP7(RECEPTION)*"
+                    - type: STRING
+                      name: or.6.color
+                      value: "385CC7"
+                    - type: STRING
+                      name: or.7.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.7.items.0
+                      value: "PLB - Channel utilization: CONNX-PLB-AP8(IOC)*"
+                    - type: STRING
+                      name: or.7.color
+                      value: "EC1594"
                     - type: INTEGER
                       name: ds.0.fill
                       value: "0"
@@ -3393,6 +3555,51 @@ zabbix_export:
                     - type: STRING
                       name: ds.0.items.0
                       value: "HYD - Connected clients: *"
+                    - type: STRING
+                      name: or.0.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.0.items.0
+                      value: "HYD - Connected clients: CONNX on *"
+                    - type: STRING
+                      name: or.0.color
+                      value: "FFD54F"
+                    - type: STRING
+                      name: or.1.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.1.items.0
+                      value: "HYD - Connected clients: SIMS-CLIENT on *"
+                    - type: STRING
+                      name: or.1.color
+                      value: "0EC9AC"
+                    - type: STRING
+                      name: or.2.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.2.items.0
+                      value: "HYD - Connected clients: SIMS-CONNX-GUEST on *"
+                    - type: STRING
+                      name: or.2.color
+                      value: "524BBC"
+                    - type: STRING
+                      name: or.3.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.3.items.0
+                      value: "HYD - Connected clients: SMARTIMS-AD on *"
+                    - type: STRING
+                      name: or.3.color
+                      value: "ED1248"
+                    - type: STRING
+                      name: or.4.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.4.items.0
+                      value: "HYD - Connected clients: SMARTIMS on *"
+                    - type: STRING
+                      name: or.4.color
+                      value: "D1E754"
                     - type: INTEGER
                       name: ds.0.fill
                       value: "0"
@@ -3411,6 +3618,51 @@ zabbix_export:
                     - type: STRING
                       name: ds.0.items.0
                       value: "HYD - Connection success rate*"
+                    - type: STRING
+                      name: or.0.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.0.items.0
+                      value: "HYD - Connection success rate (1h): CONNX on *"
+                    - type: STRING
+                      name: or.0.color
+                      value: "FFD54F"
+                    - type: STRING
+                      name: or.1.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.1.items.0
+                      value: "HYD - Connection success rate (1h): SIMS-CLIENT on *"
+                    - type: STRING
+                      name: or.1.color
+                      value: "0EC9AC"
+                    - type: STRING
+                      name: or.2.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.2.items.0
+                      value: "HYD - Connection success rate (1h): SIMS-CONNX-GUEST on *"
+                    - type: STRING
+                      name: or.2.color
+                      value: "524BBC"
+                    - type: STRING
+                      name: or.3.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.3.items.0
+                      value: "HYD - Connection success rate (1h): SMARTIMS-AD on *"
+                    - type: STRING
+                      name: or.3.color
+                      value: "ED1248"
+                    - type: STRING
+                      name: or.4.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.4.items.0
+                      value: "HYD - Connection success rate (1h): SMARTIMS on *"
+                    - type: STRING
+                      name: or.4.color
+                      value: "D1E754"
                     - type: INTEGER
                       name: ds.0.fill
                       value: "0"
@@ -3447,6 +3699,78 @@ zabbix_export:
                     - type: STRING
                       name: ds.0.items.0
                       value: "HYD - Channel utilization: *"
+                    - type: STRING
+                      name: or.0.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.0.items.0
+                      value: "HYD - Channel utilization: SIMS-HYD-BIG-AP07*"
+                    - type: STRING
+                      name: or.0.color
+                      value: "FFD54F"
+                    - type: STRING
+                      name: or.1.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.1.items.0
+                      value: "HYD - Channel utilization: SIMS-HYD-EAM-AP03*"
+                    - type: STRING
+                      name: or.1.color
+                      value: "0EC9AC"
+                    - type: STRING
+                      name: or.2.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.2.items.0
+                      value: "HYD - Channel utilization: SIMS-HYD-FIN-AP04*"
+                    - type: STRING
+                      name: or.2.color
+                      value: "524BBC"
+                    - type: STRING
+                      name: or.3.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.3.items.0
+                      value: "HYD - Channel utilization: SIMS-HYD-HR-AP08*"
+                    - type: STRING
+                      name: or.3.color
+                      value: "ED1248"
+                    - type: STRING
+                      name: or.4.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.4.items.0
+                      value: "HYD - Channel utilization: SIMS-HYD-IOT-AP02*"
+                    - type: STRING
+                      name: or.4.color
+                      value: "D1E754"
+                    - type: STRING
+                      name: or.5.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.5.items.0
+                      value: "HYD - Channel utilization: SIMS-HYD-IT-AP05*"
+                    - type: STRING
+                      name: or.5.color
+                      value: "2AB5FF"
+                    - type: STRING
+                      name: or.6.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.6.items.0
+                      value: "HYD - Channel utilization: SIMS-HYD-NOC-AP01*"
+                    - type: STRING
+                      name: or.6.color
+                      value: "385CC7"
+                    - type: STRING
+                      name: or.7.hosts.0
+                      value: "*"
+                    - type: STRING
+                      name: or.7.items.0
+                      value: "HYD - Channel utilization: SIMS-HYD-UPS-AP06*"
+                    - type: STRING
+                      name: or.7.color
+                      value: "EC1594"
                     - type: INTEGER
                       name: ds.0.fill
                       value: "0"
