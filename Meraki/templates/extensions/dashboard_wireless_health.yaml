@@ -3212,6 +3212,9 @@ zabbix_export:
                     - type: STRING
                       name: ds.0.items.0
                       value: "PLB - Connected clients: *"
+                    - type: INTEGER
+                      name: ds.0.fill
+                      value: "0"
                     - type: STRING
                       name: reference
                       value: AAAAA
@@ -3224,6 +3227,9 @@ zabbix_export:
                     - type: STRING
                       name: ds.0.items.0
                       value: "PLB - Connection success rate*"
+                    - type: INTEGER
+                      name: ds.0.fill
+                      value: "0"
                     - type: STRING
                       name: reference
                       value: AAAAB
@@ -3254,6 +3260,9 @@ zabbix_export:
                     - type: STRING
                       name: ds.0.items.0
                       value: "PLB - Channel utilization: *"
+                    - type: INTEGER
+                      name: ds.0.fill
+                      value: "0"
                     - type: STRING
                       name: reference
                       value: AAAAA
@@ -3375,6 +3384,9 @@ zabbix_export:
                     - type: STRING
                       name: ds.0.items.0
                       value: "HYD - Connected clients: *"
+                    - type: INTEGER
+                      name: ds.0.fill
+                      value: "0"
                     - type: STRING
                       name: reference
                       value: AAAAA
@@ -3387,6 +3399,9 @@ zabbix_export:
                     - type: STRING
                       name: ds.0.items.0
                       value: "HYD - Connection success rate*"
+                    - type: INTEGER
+                      name: ds.0.fill
+                      value: "0"
                     - type: STRING
                       name: reference
                       value: AAAAB
@@ -3417,6 +3432,9 @@ zabbix_export:
                     - type: STRING
                       name: ds.0.items.0
                       value: "HYD - Channel utilization: *"
+                    - type: INTEGER
+                      name: ds.0.fill
+                      value: "0"
                     - type: STRING
                       name: reference
                       value: AAAAA
