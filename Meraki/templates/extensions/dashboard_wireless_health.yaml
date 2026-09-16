@@ -3215,6 +3215,9 @@ zabbix_export:
                     - type: INTEGER
                       name: ds.0.fill
                       value: "0"
+                    - type: INTEGER
+                      name: ds.0.color_palette
+                      value: "0"
                     - type: STRING
                       name: reference
                       value: AAAAA
@@ -3229,6 +3232,9 @@ zabbix_export:
                       value: "PLB - Connection success rate*"
                     - type: INTEGER
                       name: ds.0.fill
+                      value: "0"
+                    - type: INTEGER
+                      name: ds.0.color_palette
                       value: "0"
                     - type: STRING
                       name: reference
@@ -3262,6 +3268,9 @@ zabbix_export:
                       value: "PLB - Channel utilization: *"
                     - type: INTEGER
                       name: ds.0.fill
+                      value: "0"
+                    - type: INTEGER
+                      name: ds.0.color_palette
                       value: "0"
                     - type: STRING
                       name: reference
@@ -3387,6 +3396,9 @@ zabbix_export:
                     - type: INTEGER
                       name: ds.0.fill
                       value: "0"
+                    - type: INTEGER
+                      name: ds.0.color_palette
+                      value: "0"
                     - type: STRING
                       name: reference
                       value: AAAAA
@@ -3401,6 +3413,9 @@ zabbix_export:
                       value: "HYD - Connection success rate*"
                     - type: INTEGER
                       name: ds.0.fill
+                      value: "0"
+                    - type: INTEGER
+                      name: ds.0.color_palette
                       value: "0"
                     - type: STRING
                       name: reference
@@ -3434,6 +3449,9 @@ zabbix_export:
                       value: "HYD - Channel utilization: *"
                     - type: INTEGER
                       name: ds.0.fill
+                      value: "0"
+                    - type: INTEGER
+                      name: ds.0.color_palette
                       value: "0"
                     - type: STRING
                       name: reference
