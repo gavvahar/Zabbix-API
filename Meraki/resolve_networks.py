@@ -25,10 +25,16 @@ MERAKI_API_BASE = "https://api.meraki.com/api/v1"
 def _fetch_networks():
     """Return every network in MERAKI_ORG_ID as the Meraki API's raw list of
     {"id": ..., "name": ..., ...} dicts.
+
+    Meraki paginates this endpoint at a default of 1000/page -- perPage=100000
+    (the documented max) is passed explicitly so an org with more networks
+    than that default doesn't get silently truncated, which would otherwise
+    show up as a false "network not found" for a real network that just
+    happened to fall past the first page.
     """
     url = f"{MERAKI_API_BASE}/organizations/{MERAKI_ORG_ID}/networks"
     headers = {"X-Cisco-Meraki-API-Key": MERAKI_API_TOKEN}
-    resp = requests.get(url, headers=headers, timeout=30)
+    resp = requests.get(url, headers=headers, params={"perPage": 100000}, timeout=30)
     resp.raise_for_status()
     return resp.json()
 
