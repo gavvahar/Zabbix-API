@@ -1487,7 +1487,7 @@ zabbix_export:
                     - tag: scope
                       value: performance
             - uuid: a72b7cf574ba490e8a7e39a5e6f1e4e6
-              name: "Connected clients: {#SSID_NAME} on {#NETWORK_NAME}"
+              name: "PLB - Connected clients: {#SSID_NAME} on {#NETWORK_NAME}"
               type: SCRIPT
               key: meraki.ssid.clientcount.plb[{#NETWORK_ID},{#SSID_NUMBER}]
               delay: "{$MERAKI.LLD.INTERVAL}"
@@ -1655,7 +1655,7 @@ zabbix_export:
                 - tag: component
                   value: ssid
             - uuid: 884610a8b832465fa7c67f947e50c5df
-              name: "Connection success rate (1h): {#SSID_NAME} on {#NETWORK_NAME}"
+              name: "PLB - Connection success rate (1h): {#SSID_NAME} on {#NETWORK_NAME}"
               type: DEPENDENT
               key: meraki.ssid.connections.successrate.plb[{#NETWORK_ID},{#SSID_NUMBER}]
               history: 31d
@@ -1672,22 +1672,6 @@ zabbix_export:
                 - tag: component
                   value: ssid
           graph_prototypes:
-            - uuid: 0e8d0e7f90b14251b106a40b86d4cc53
-              name: "PLB - SSID [{#SSID_NAME}] on {#NETWORK_NAME}: Client Count"
-              ymin_type_1: FIXED
-              graph_items:
-                - color: 199C0D
-                  item:
-                    host: Cisco Meraki dashboard by HTTP - Wireless Health
-                    key: meraki.ssid.clientcount.plb[{#NETWORK_ID},{#SSID_NUMBER}]
-            - uuid: 740a0d828ef34208a2a67707e87bda87
-              name: "PLB - SSID [{#SSID_NAME}] on {#NETWORK_NAME}: Connection Success Rate"
-              ymin_type_1: FIXED
-              graph_items:
-                - color: 199C0D
-                  item:
-                    host: Cisco Meraki dashboard by HTTP - Wireless Health
-                    key: meraki.ssid.connections.successrate.plb[{#NETWORK_ID},{#SSID_NUMBER}]
             - uuid: 8f7f77a5c84d424aaee432ac92a7ba2a
               name: "PLB - SSID [{#SSID_NAME}] on {#NETWORK_NAME}: Failures"
               ymin_type_1: FIXED
@@ -1840,7 +1824,7 @@ zabbix_export:
                     - tag: scope
                       value: performance
             - uuid: fe1419a3e4bd4a8d814b7f5a8b061835
-              name: "Connected clients: {#SSID_NAME} on {#NETWORK_NAME}"
+              name: "HYD - Connected clients: {#SSID_NAME} on {#NETWORK_NAME}"
               type: SCRIPT
               key: meraki.ssid.clientcount.hyd[{#NETWORK_ID},{#SSID_NUMBER}]
               delay: "{$MERAKI.LLD.INTERVAL}"
@@ -2008,7 +1992,7 @@ zabbix_export:
                 - tag: component
                   value: ssid
             - uuid: fc39bee6ad1d4faaae634f033a7d24a2
-              name: "Connection success rate (1h): {#SSID_NAME} on {#NETWORK_NAME}"
+              name: "HYD - Connection success rate (1h): {#SSID_NAME} on {#NETWORK_NAME}"
               type: DEPENDENT
               key: meraki.ssid.connections.successrate.hyd[{#NETWORK_ID},{#SSID_NUMBER}]
               history: 31d
@@ -2025,22 +2009,6 @@ zabbix_export:
                 - tag: component
                   value: ssid
           graph_prototypes:
-            - uuid: 40e85c5bc0f24c7a9d91253128d87845
-              name: "HYD - SSID [{#SSID_NAME}] on {#NETWORK_NAME}: Client Count"
-              ymin_type_1: FIXED
-              graph_items:
-                - color: 199C0D
-                  item:
-                    host: Cisco Meraki dashboard by HTTP - Wireless Health
-                    key: meraki.ssid.clientcount.hyd[{#NETWORK_ID},{#SSID_NUMBER}]
-            - uuid: 380ea024ef1c46468321bcbb7e168b36
-              name: "HYD - SSID [{#SSID_NAME}] on {#NETWORK_NAME}: Connection Success Rate"
-              ymin_type_1: FIXED
-              graph_items:
-                - color: 199C0D
-                  item:
-                    host: Cisco Meraki dashboard by HTTP - Wireless Health
-                    key: meraki.ssid.connections.successrate.hyd[{#NETWORK_ID},{#SSID_NUMBER}]
             - uuid: 8c06740cca4c438c932490e37aef334e
               name: "HYD - SSID [{#SSID_NAME}] on {#NETWORK_NAME}: Failures"
               ymin_type_1: FIXED
@@ -2137,7 +2105,7 @@ zabbix_export:
           lifetime: 7d
           item_prototypes:
             - uuid: a0a984bf9acc4c18a75c5d0bf68a5052
-              name: "Channel utilization: {#AP_NAME} ({#RADIO_BAND}GHz, radio {#RADIO_INDEX})"
+              name: "PLB - Channel utilization: {#AP_NAME} ({#RADIO_BAND}GHz, radio {#RADIO_INDEX})"
               type: SCRIPT
               key: meraki.radio.utilization.plb[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
               delay: "{$MERAKI.LLD.INTERVAL}"
@@ -2392,15 +2360,6 @@ zabbix_export:
               tags:
                 - tag: component
                   value: radio
-          graph_prototypes:
-            - uuid: f55e498756dc479ea29d8bafb0a24d3a
-              name: "PLB - Radio [{#AP_NAME} {#RADIO_BAND}GHz radio {#RADIO_INDEX}]: Utilization"
-              ymin_type_1: FIXED
-              graph_items:
-                - color: 199C0D
-                  item:
-                    host: Cisco Meraki dashboard by HTTP - Wireless Health
-                    key: meraki.radio.utilization.plb[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
           timeout: "{$MERAKI.DATA.TIMEOUT}"
           parameters:
             - name: httpproxy
@@ -2480,7 +2439,7 @@ zabbix_export:
           lifetime: 7d
           item_prototypes:
             - uuid: dd4713839fbc4f3b93d7ca4c7933deb1
-              name: "Channel utilization: {#AP_NAME} ({#RADIO_BAND}GHz, radio {#RADIO_INDEX})"
+              name: "HYD - Channel utilization: {#AP_NAME} ({#RADIO_BAND}GHz, radio {#RADIO_INDEX})"
               type: SCRIPT
               key: meraki.radio.utilization.hyd[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
               delay: "{$MERAKI.LLD.INTERVAL}"
@@ -2735,15 +2694,6 @@ zabbix_export:
               tags:
                 - tag: component
                   value: radio
-          graph_prototypes:
-            - uuid: 7d8ddb8bcebc42e4b990d3129d22c5d8
-              name: "HYD - Radio [{#AP_NAME} {#RADIO_BAND}GHz radio {#RADIO_INDEX}]: Utilization"
-              ymin_type_1: FIXED
-              graph_items:
-                - color: 199C0D
-                  item:
-                    host: Cisco Meraki dashboard by HTTP - Wireless Health
-                    key: meraki.radio.utilization.hyd[{#SERIAL},{#RADIO_BAND},{#RADIO_INDEX}]
           timeout: "{$MERAKI.DATA.TIMEOUT}"
           parameters:
             - name: httpproxy
@@ -3254,36 +3204,26 @@ zabbix_export:
                       value: AAAAE
             - name: "Meraki: SSIDs - PLB"
               widgets:
-                - type: graphprototype
+                - type: svggraph
                   name: "Client Count"
                   width: "36"
                   height: "5"
                   fields:
-                    - type: INTEGER
-                      name: columns
-                      value: "1"
-                    - type: GRAPH_PROTOTYPE
-                      name: graphid.0
-                      value:
-                        host: Cisco Meraki dashboard by HTTP - Wireless Health
-                        name: "PLB - SSID [{#SSID_NAME}] on {#NETWORK_NAME}: Client Count"
+                    - type: STRING
+                      name: ds.0.items.0
+                      value: "PLB - Connected clients: *"
                     - type: STRING
                       name: reference
                       value: AAAAA
-                - type: graphprototype
+                - type: svggraph
                   name: "Connection Success Rate"
                   x: "36"
                   width: "36"
                   height: "5"
                   fields:
-                    - type: INTEGER
-                      name: columns
-                      value: "1"
-                    - type: GRAPH_PROTOTYPE
-                      name: graphid.0
-                      value:
-                        host: Cisco Meraki dashboard by HTTP - Wireless Health
-                        name: "PLB - SSID [{#SSID_NAME}] on {#NETWORK_NAME}: Connection Success Rate"
+                    - type: STRING
+                      name: ds.0.items.0
+                      value: "PLB - Connection success rate*"
                     - type: STRING
                       name: reference
                       value: AAAAB
@@ -3306,19 +3246,14 @@ zabbix_export:
                       value: AAAAC
             - name: "Meraki: Radios - PLB"
               widgets:
-                - type: graphprototype
+                - type: svggraph
                   name: "Utilization"
                   width: "36"
                   height: "5"
                   fields:
-                    - type: INTEGER
-                      name: columns
-                      value: "1"
-                    - type: GRAPH_PROTOTYPE
-                      name: graphid.0
-                      value:
-                        host: Cisco Meraki dashboard by HTTP - Wireless Health
-                        name: "PLB - Radio [{#AP_NAME} {#RADIO_BAND}GHz radio {#RADIO_INDEX}]: Utilization"
+                    - type: STRING
+                      name: ds.0.items.0
+                      value: "PLB - Channel utilization: *"
                     - type: STRING
                       name: reference
                       value: AAAAA
@@ -3432,36 +3367,26 @@ zabbix_export:
                       value: AAAAE
             - name: "Meraki: SSIDs - HYD"
               widgets:
-                - type: graphprototype
+                - type: svggraph
                   name: "Client Count"
                   width: "36"
                   height: "5"
                   fields:
-                    - type: INTEGER
-                      name: columns
-                      value: "1"
-                    - type: GRAPH_PROTOTYPE
-                      name: graphid.0
-                      value:
-                        host: Cisco Meraki dashboard by HTTP - Wireless Health
-                        name: "HYD - SSID [{#SSID_NAME}] on {#NETWORK_NAME}: Client Count"
+                    - type: STRING
+                      name: ds.0.items.0
+                      value: "HYD - Connected clients: *"
                     - type: STRING
                       name: reference
                       value: AAAAA
-                - type: graphprototype
+                - type: svggraph
                   name: "Connection Success Rate"
                   x: "36"
                   width: "36"
                   height: "5"
                   fields:
-                    - type: INTEGER
-                      name: columns
-                      value: "1"
-                    - type: GRAPH_PROTOTYPE
-                      name: graphid.0
-                      value:
-                        host: Cisco Meraki dashboard by HTTP - Wireless Health
-                        name: "HYD - SSID [{#SSID_NAME}] on {#NETWORK_NAME}: Connection Success Rate"
+                    - type: STRING
+                      name: ds.0.items.0
+                      value: "HYD - Connection success rate*"
                     - type: STRING
                       name: reference
                       value: AAAAB
@@ -3484,19 +3409,14 @@ zabbix_export:
                       value: AAAAC
             - name: "Meraki: Radios - HYD"
               widgets:
-                - type: graphprototype
+                - type: svggraph
                   name: "Utilization"
                   width: "36"
                   height: "5"
                   fields:
-                    - type: INTEGER
-                      name: columns
-                      value: "1"
-                    - type: GRAPH_PROTOTYPE
-                      name: graphid.0
-                      value:
-                        host: Cisco Meraki dashboard by HTTP - Wireless Health
-                        name: "HYD - Radio [{#AP_NAME} {#RADIO_BAND}GHz radio {#RADIO_INDEX}]: Utilization"
+                    - type: STRING
+                      name: ds.0.items.0
+                      value: "HYD - Channel utilization: *"
                     - type: STRING
                       name: reference
                       value: AAAAA
