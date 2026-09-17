@@ -3116,7 +3116,7 @@ zabbix_export:
               widgets:
                 - type: graphprototype
                   name: "Client Count"
-                  width: "36"
+                  width: "72"
                   height: "5"
                   fields:
                     - type: INTEGER
@@ -3135,8 +3135,8 @@ zabbix_export:
                       value: "0"
                 - type: graphprototype
                   name: "Connection Success Rate"
-                  x: "36"
-                  width: "36"
+                  y: "5"
+                  width: "72"
                   height: "5"
                   fields:
                     - type: INTEGER
@@ -3152,8 +3152,8 @@ zabbix_export:
                       value: AAAAB
                 - type: graphprototype
                   name: "Latency by Traffic Class"
-                  y: "5"
-                  width: "36"
+                  y: "10"
+                  width: "72"
                   height: "5"
                   fields:
                     - type: INTEGER
@@ -3169,9 +3169,8 @@ zabbix_export:
                       value: AAAAC
                 - type: graphprototype
                   name: "Throughput"
-                  x: "36"
-                  y: "5"
-                  width: "36"
+                  y: "15"
+                  width: "72"
                   height: "5"
                   fields:
                     - type: INTEGER
@@ -3187,8 +3186,8 @@ zabbix_export:
                       value: AAAAD
                 - type: graphprototype
                   name: "Failures"
-                  y: "10"
-                  width: "36"
+                  y: "20"
+                  width: "72"
                   height: "5"
                   fields:
                     - type: INTEGER
@@ -3206,7 +3205,7 @@ zabbix_export:
               widgets:
                 - type: svggraph
                   name: "Client Count"
-                  width: "36"
+                  width: "72"
                   height: "5"
                   fields:
                     - type: STRING
@@ -3268,8 +3267,8 @@ zabbix_export:
                       value: AAAAA
                 - type: svggraph
                   name: "Connection Success Rate"
-                  x: "36"
-                  width: "36"
+                  y: "5"
+                  width: "72"
                   height: "5"
                   fields:
                     - type: STRING
@@ -3331,8 +3330,8 @@ zabbix_export:
                       value: AAAAB
                 - type: graphprototype
                   name: "Failures"
-                  y: "5"
-                  width: "36"
+                  y: "10"
+                  width: "72"
                   height: "5"
                   fields:
                     - type: INTEGER
@@ -3350,7 +3349,7 @@ zabbix_export:
               widgets:
                 - type: svggraph
                   name: "Utilization"
-                  width: "36"
+                  width: "72"
                   height: "5"
                   fields:
                     - type: STRING
@@ -3441,7 +3440,7 @@ zabbix_export:
               widgets:
                 - type: graphprototype
                   name: "Bandwidth"
-                  width: "36"
+                  width: "72"
                   height: "5"
                   fields:
                     - type: INTEGER
@@ -3459,7 +3458,7 @@ zabbix_export:
               widgets:
                 - type: graphprototype
                   name: "Client Count"
-                  width: "36"
+                  width: "72"
                   height: "5"
                   fields:
                     - type: INTEGER
@@ -3478,8 +3477,8 @@ zabbix_export:
                       value: "0"
                 - type: graphprototype
                   name: "Connection Success Rate"
-                  x: "36"
-                  width: "36"
+                  y: "5"
+                  width: "72"
                   height: "5"
                   fields:
                     - type: INTEGER
@@ -3495,8 +3494,8 @@ zabbix_export:
                       value: AAAAB
                 - type: graphprototype
                   name: "Latency by Traffic Class"
-                  y: "5"
-                  width: "36"
+                  y: "10"
+                  width: "72"
                   height: "5"
                   fields:
                     - type: INTEGER
@@ -3512,9 +3511,8 @@ zabbix_export:
                       value: AAAAC
                 - type: graphprototype
                   name: "Throughput"
-                  x: "36"
-                  y: "5"
-                  width: "36"
+                  y: "15"
+                  width: "72"
                   height: "5"
                   fields:
                     - type: INTEGER
@@ -3530,8 +3528,8 @@ zabbix_export:
                       value: AAAAD
                 - type: graphprototype
                   name: "Failures"
-                  y: "10"
-                  width: "36"
+                  y: "20"
+                  width: "72"
                   height: "5"
                   fields:
                     - type: INTEGER
@@ -3549,7 +3547,7 @@ zabbix_export:
               widgets:
                 - type: svggraph
                   name: "Client Count"
-                  width: "36"
+                  width: "72"
                   height: "5"
                   fields:
                     - type: STRING
@@ -3611,8 +3609,8 @@ zabbix_export:
                       value: AAAAA
                 - type: svggraph
                   name: "Connection Success Rate"
-                  x: "36"
-                  width: "36"
+                  y: "5"
+                  width: "72"
                   height: "5"
                   fields:
                     - type: STRING
@@ -3674,8 +3672,8 @@ zabbix_export:
                       value: AAAAB
                 - type: graphprototype
                   name: "Failures"
-                  y: "5"
-                  width: "36"
+                  y: "10"
+                  width: "72"
                   height: "5"
                   fields:
                     - type: INTEGER
@@ -3693,7 +3691,7 @@ zabbix_export:
               widgets:
                 - type: svggraph
                   name: "Utilization"
-                  width: "36"
+                  width: "72"
                   height: "5"
                   fields:
                     - type: STRING
@@ -3784,7 +3782,7 @@ zabbix_export:
               widgets:
                 - type: graphprototype
                   name: "Bandwidth"
-                  width: "36"
+                  width: "72"
                   height: "5"
                   fields:
                     - type: INTEGER
