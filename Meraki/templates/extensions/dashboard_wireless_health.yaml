@@ -3108,8 +3108,8 @@ zabbix_export:
           value: CHANGE_IF_NEEDED
           description: Meraki network id for Connx HYD HQ. Used only by the "- HYD" discovery rule variants to scope the Networks/SSIDs/Radios/Client Groups dashboard pages to this one location.
       dashboards:
-        - uuid: 2b36686a5e644c29ada99cf8ac22e6bf
-          name: "Meraki: Wireless Health"
+        - uuid: 479ad378e9df42baa1d3f707c0061e84
+          name: "Meraki: Wireless Health - PLB"
           auto_start: "NO"
           pages:
             - name: "Meraki: Networks - PLB"
@@ -3481,6 +3481,10 @@ zabbix_export:
                     - type: STRING
                       name: reference
                       value: AAAAA
+        - uuid: f5422a5d85f64427b6d802eafa3142c8
+          name: "Meraki: Wireless Health - HYD"
+          auto_start: "NO"
+          pages:
             - name: "Meraki: Networks - HYD"
               widgets:
                 - type: graphprototype
