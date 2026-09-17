@@ -3262,6 +3262,15 @@ zabbix_export:
                     - type: INTEGER
                       name: ds.0.color_palette
                       value: "0"
+                    - type: INTEGER
+                      name: legend_columns
+                      value: "1"
+                    - type: INTEGER
+                      name: legend_lines_mode
+                      value: "1"
+                    - type: INTEGER
+                      name: legend_lines
+                      value: "10"
                     - type: STRING
                       name: reference
                       value: AAAAA
@@ -3325,6 +3334,15 @@ zabbix_export:
                     - type: INTEGER
                       name: ds.0.color_palette
                       value: "0"
+                    - type: INTEGER
+                      name: legend_columns
+                      value: "1"
+                    - type: INTEGER
+                      name: legend_lines_mode
+                      value: "1"
+                    - type: INTEGER
+                      name: legend_lines
+                      value: "10"
                     - type: STRING
                       name: reference
                       value: AAAAB
@@ -3433,6 +3451,15 @@ zabbix_export:
                     - type: INTEGER
                       name: ds.0.color_palette
                       value: "0"
+                    - type: INTEGER
+                      name: legend_columns
+                      value: "1"
+                    - type: INTEGER
+                      name: legend_lines_mode
+                      value: "1"
+                    - type: INTEGER
+                      name: legend_lines
+                      value: "10"
                     - type: STRING
                       name: reference
                       value: AAAAA
@@ -3604,6 +3631,15 @@ zabbix_export:
                     - type: INTEGER
                       name: ds.0.color_palette
                       value: "0"
+                    - type: INTEGER
+                      name: legend_columns
+                      value: "1"
+                    - type: INTEGER
+                      name: legend_lines_mode
+                      value: "1"
+                    - type: INTEGER
+                      name: legend_lines
+                      value: "10"
                     - type: STRING
                       name: reference
                       value: AAAAA
@@ -3667,6 +3703,15 @@ zabbix_export:
                     - type: INTEGER
                       name: ds.0.color_palette
                       value: "0"
+                    - type: INTEGER
+                      name: legend_columns
+                      value: "1"
+                    - type: INTEGER
+                      name: legend_lines_mode
+                      value: "1"
+                    - type: INTEGER
+                      name: legend_lines
+                      value: "10"
                     - type: STRING
                       name: reference
                       value: AAAAB
@@ -3775,6 +3820,15 @@ zabbix_export:
                     - type: INTEGER
                       name: ds.0.color_palette
                       value: "0"
+                    - type: INTEGER
+                      name: legend_columns
+                      value: "1"
+                    - type: INTEGER
+                      name: legend_lines_mode
+                      value: "1"
+                    - type: INTEGER
+                      name: legend_lines
+                      value: "10"
                     - type: STRING
                       name: reference
                       value: AAAAA
