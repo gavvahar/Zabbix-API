@@ -3219,7 +3219,7 @@ zabbix_export:
                       value: "PLB - Connected clients: CONNX LAB on *"
                     - type: STRING
                       name: or.0.color
-                      value: "FFD54F"
+                      value: "F97316"
                     - type: STRING
                       name: or.1.hosts.0
                       value: "*"
@@ -3255,7 +3255,7 @@ zabbix_export:
                       value: "PLB - Connected clients: SmartIMS | ConnX Guest on *"
                     - type: STRING
                       name: or.4.color
-                      value: "D1E754"
+                      value: "15803D"
                     - type: INTEGER
                       name: ds.0.fill
                       value: "0"
@@ -3291,7 +3291,7 @@ zabbix_export:
                       value: "PLB - Connection success rate (1h): CONNX LAB on *"
                     - type: STRING
                       name: or.0.color
-                      value: "FFD54F"
+                      value: "F97316"
                     - type: STRING
                       name: or.1.hosts.0
                       value: "*"
@@ -3327,7 +3327,7 @@ zabbix_export:
                       value: "PLB - Connection success rate (1h): SmartIMS | ConnX Guest on *"
                     - type: STRING
                       name: or.4.color
-                      value: "D1E754"
+                      value: "15803D"
                     - type: INTEGER
                       name: ds.0.fill
                       value: "0"
@@ -3381,7 +3381,7 @@ zabbix_export:
                       value: "PLB - Channel utilization: CONNX-PLB-AP1(TT)*"
                     - type: STRING
                       name: or.0.color
-                      value: "FFD54F"
+                      value: "F97316"
                     - type: STRING
                       name: or.1.hosts.0
                       value: "*"
@@ -3417,7 +3417,7 @@ zabbix_export:
                       value: "PLB - Channel utilization: CONNX-PLB-AP5(IOT)*"
                     - type: STRING
                       name: or.4.color
-                      value: "D1E754"
+                      value: "15803D"
                     - type: STRING
                       name: or.5.hosts.0
                       value: "*"
@@ -3592,7 +3592,7 @@ zabbix_export:
                       value: "HYD - Connected clients: CONNX on *"
                     - type: STRING
                       name: or.0.color
-                      value: "FFD54F"
+                      value: "F97316"
                     - type: STRING
                       name: or.1.hosts.0
                       value: "*"
@@ -3628,7 +3628,7 @@ zabbix_export:
                       value: "HYD - Connected clients: SMARTIMS on *"
                     - type: STRING
                       name: or.4.color
-                      value: "D1E754"
+                      value: "15803D"
                     - type: INTEGER
                       name: ds.0.fill
                       value: "0"
@@ -3664,7 +3664,7 @@ zabbix_export:
                       value: "HYD - Connection success rate (1h): CONNX on *"
                     - type: STRING
                       name: or.0.color
-                      value: "FFD54F"
+                      value: "F97316"
                     - type: STRING
                       name: or.1.hosts.0
                       value: "*"
@@ -3700,7 +3700,7 @@ zabbix_export:
                       value: "HYD - Connection success rate (1h): SMARTIMS on *"
                     - type: STRING
                       name: or.4.color
-                      value: "D1E754"
+                      value: "15803D"
                     - type: INTEGER
                       name: ds.0.fill
                       value: "0"
@@ -3754,7 +3754,7 @@ zabbix_export:
                       value: "HYD - Channel utilization: SIMS-HYD-BIG-AP07*"
                     - type: STRING
                       name: or.0.color
-                      value: "FFD54F"
+                      value: "F97316"
                     - type: STRING
                       name: or.1.hosts.0
                       value: "*"
@@ -3790,7 +3790,7 @@ zabbix_export:
                       value: "HYD - Channel utilization: SIMS-HYD-IOT-AP02*"
                     - type: STRING
                       name: or.4.color
-                      value: "D1E754"
+                      value: "15803D"
                     - type: STRING
                       name: or.5.hosts.0
                       value: "*"
