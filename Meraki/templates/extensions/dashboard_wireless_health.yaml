@@ -3257,6 +3257,9 @@ zabbix_export:
                       name: or.4.color
                       value: "15803D"
                     - type: INTEGER
+                      name: ds.0.width
+                      value: "3"
+                    - type: INTEGER
                       name: ds.0.fill
                       value: "0"
                     - type: INTEGER
@@ -3328,6 +3331,9 @@ zabbix_export:
                     - type: STRING
                       name: or.4.color
                       value: "15803D"
+                    - type: INTEGER
+                      name: ds.0.width
+                      value: "3"
                     - type: INTEGER
                       name: ds.0.fill
                       value: "0"
@@ -3445,6 +3451,9 @@ zabbix_export:
                     - type: STRING
                       name: or.7.color
                       value: "EC1594"
+                    - type: INTEGER
+                      name: ds.0.width
+                      value: "3"
                     - type: INTEGER
                       name: ds.0.fill
                       value: "0"
@@ -3630,6 +3639,9 @@ zabbix_export:
                       name: or.4.color
                       value: "15803D"
                     - type: INTEGER
+                      name: ds.0.width
+                      value: "3"
+                    - type: INTEGER
                       name: ds.0.fill
                       value: "0"
                     - type: INTEGER
@@ -3701,6 +3713,9 @@ zabbix_export:
                     - type: STRING
                       name: or.4.color
                       value: "15803D"
+                    - type: INTEGER
+                      name: ds.0.width
+                      value: "3"
                     - type: INTEGER
                       name: ds.0.fill
                       value: "0"
@@ -3818,6 +3833,9 @@ zabbix_export:
                     - type: STRING
                       name: or.7.color
                       value: "EC1594"
+                    - type: INTEGER
+                      name: ds.0.width
+                      value: "3"
                     - type: INTEGER
                       name: ds.0.fill
                       value: "0"
