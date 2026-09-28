@@ -100,7 +100,5 @@ if __name__ == "__main__":
         "rollback": rollback,
     }.get(
         action,
-        lambda: print(
-            "Usage: python provision.py [all|create|ap-health|wireless|resolve-networks|test|rollout|rollback] [--recreate]"
-        ),
+        lambda: print("Usage: python provision.py [all|create|ap-health|wireless|resolve-networks|test|rollout|rollback] [--recreate]"),
     )()
