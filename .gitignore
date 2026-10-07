@@ -219,3 +219,7 @@ __marimo__/
 .lh
 node_modules/
 .vscode
+
+# Meraki test config (API keys)
+.meraki_config.json
+test_meraki_status.py
