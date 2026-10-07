@@ -165,9 +165,11 @@ zabbix_export:
               value: network
           triggers:
             - uuid: 705f6b25b1df46cabef567cf3dddc7e9
-              expression: min(/Cisco Meraki device by HTTP - Packet Loss/meraki.device.ping.latency,#3)>{$MERAKI.PING.LATENCY.HIGH}
+              expression: min(/Cisco Meraki device by HTTP - Packet Loss/meraki.device.ping.latency,#3)>{$MERAKI.PING.LATENCY.HIGH} and last(/Cisco Meraki device by HTTP - Packet Loss/meraki.device.info.status)<>"dormant"
+              recovery_expression: last(/Cisco Meraki device by HTTP - Packet Loss/meraki.device.info.status)="dormant"
               name: "Meraki: High latency to {$MERAKI.PING.TARGET} on {HOST.NAME}"
               priority: WARNING
+              description: "Suppressed while the device reports as dormant (intentionally offline) rather than failing. Auto-recovers when status becomes dormant."
               tags:
                 - tag: scope
                   value: availability
@@ -192,9 +194,11 @@ zabbix_export:
               value: network
           triggers:
             - uuid: 7f8ab086d6a2407b99f4264c8489a11a
-              expression: min(/Cisco Meraki device by HTTP - Packet Loss/meraki.device.packetloss.pct,#3)>{$MERAKI.PING.LOSS}
+              expression: min(/Cisco Meraki device by HTTP - Packet Loss/meraki.device.packetloss.pct,#3)>{$MERAKI.PING.LOSS} and last(/Cisco Meraki device by HTTP - Packet Loss/meraki.device.info.status)<>"dormant"
+              recovery_expression: last(/Cisco Meraki device by HTTP - Packet Loss/meraki.device.info.status)="dormant"
               name: "Meraki: Packet loss to {$MERAKI.PING.TARGET} > {$MERAKI.PING.LOSS}%"
               priority: WARNING
+              description: "Suppressed while the device reports as dormant (intentionally offline) rather than failing. Auto-recovers when status becomes dormant."
               tags:
                 - tag: scope
                   value: performance
@@ -292,6 +296,7 @@ zabbix_export:
               }
 
               result = {
+                status: device.status || "",
                 publicIp: device.publicIp || "",
                 lastReportedAtUnix: device.lastReportedAt
                   ? Math.floor(new Date(device.lastReportedAt).getTime() / 1000)
@@ -327,6 +332,23 @@ zabbix_export:
           tags:
             - tag: component
               value: raw
+        - uuid: 6d21929ecb4c4ae7b3ad2955d296a871
+          name: Device status
+          type: DEPENDENT
+          key: meraki.device.info.status
+          history: 31d
+          value_type: CHAR
+          description: "Meraki-reported device status from the devices/statuses endpoint: online, alerting, offline or dormant. Dormant means the device is intentionally powered down/decommissioned rather than failing, so the availability triggers below deliberately exclude it."
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.result.status
+              error_handler: DISCARD_VALUE
+          master_item:
+            key: meraki.get.deviceinfo
+          tags:
+            - tag: component
+              value: health
         - uuid: 8f4800a22b014ebe9b27ee4dc3e6ac00
           name: Public IP
           type: DEPENDENT
@@ -895,10 +917,11 @@ zabbix_export:
         - tag: scope
           value: availability
     - uuid: 1af43986530e4eb79aa4da0aca9b9450
-      expression: length(last(/Cisco Meraki device by HTTP/meraki.device.get.status.errors))>0 or length(last(/Cisco Meraki device by HTTP - Packet Loss/meraki.get.packetloss.error))>0 or length(last(/Cisco Meraki device by HTTP - Packet Loss/meraki.device.info.error))>0
+      expression: (length(last(/Cisco Meraki device by HTTP/meraki.device.get.status.errors))>0 or length(last(/Cisco Meraki device by HTTP - Packet Loss/meraki.get.packetloss.error))>0 or length(last(/Cisco Meraki device by HTTP - Packet Loss/meraki.device.info.error))>0) and last(/Cisco Meraki device by HTTP - Packet Loss/meraki.device.info.status)<>"dormant"
+      recovery_expression: last(/Cisco Meraki device by HTTP - Packet Loss/meraki.device.info.status)="dormant"
       name: "Meraki: API failure polling {HOST.NAME}"
       priority: AVERAGE
-      description: "First condition references the base template's own inherited status-poller error mirror; the other two are local to this template."
+      description: "First condition references the base template's own inherited status-poller error mirror; the other two are local to this template. Suppressed while the device reports as dormant (intentionally offline). Auto-recovers when status becomes dormant."
       tags:
         - tag: scope
           value: availability
