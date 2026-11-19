@@ -1,0 +1,60 @@
+zabbix_export:
+  version: "7.0"
+  template_groups:
+    - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
+      name: Templates/Applications
+  templates:
+    - uuid: b6638d374230416bb983324ab09299c4
+      template: ConnxAI Transit Health
+      name: ConnxAI Transit Health
+      description: |
+        Regular returns HTTP 200 for OK or WARNING and 503 for ERROR.
+        Strict returns HTTP 200 for OK and 503 for WARNING or ERROR.
+      groups:
+        - name: Templates/Applications
+      httptests:
+        - uuid: ea7bab529a21426a86779a6fe87c73c8
+          name: ConnxAI Transit Health Regular
+          delay: 1m
+          headers:
+            - name: Authorization
+              value: "Basic {{$CONNXAI.TOKEN}.btoa()}"
+          authentication: NONE
+          http_user: ""
+          http_password: ""
+          verify_peer: "YES"
+          verify_host: "YES"
+          steps:
+            - name: Health
+              url: https://partner.connxai.com/api/transit/health/
+              follow_redirects: "NO"
+              status_codes: "200"
+        - uuid: 262e8d899fc84403a4ede7068fb92e4f
+          name: ConnxAI Transit Health Strict
+          delay: 1m
+          headers:
+            - name: Authorization
+              value: "Basic {{$CONNXAI.TOKEN}.btoa()}"
+          authentication: NONE
+          http_user: ""
+          http_password: ""
+          verify_peer: "YES"
+          verify_host: "YES"
+          steps:
+            - name: Health
+              url: https://partner.connxai.com/api/transit/health/?strict=1
+              follow_redirects: "NO"
+              status_codes: "200"
+      macros:
+        - macro: "{$CONNXAI.TOKEN}"
+          type: SECRET_TEXT
+          description: Full ConnxAI token passed to curl -u, including the colon.
+  triggers:
+    - uuid: 628609df71344e04a0d454fc06167085
+      expression: last(/ConnxAI Transit Health/web.test.fail[ConnxAI Transit Health Regular])<>0
+      name: "ConnxAI Transit: regular health check failed"
+      priority: AVERAGE
+    - uuid: e05eee0ed8d5421eb5cc8f2e4cd0a49f
+      expression: last(/ConnxAI Transit Health/web.test.fail[ConnxAI Transit Health Strict])<>0
+      name: "ConnxAI Transit: strict health check failed"
+      priority: WARNING
